@@ -3,14 +3,6 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-
 jobs:
   build:
     permissions:
