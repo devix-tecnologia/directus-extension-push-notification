@@ -15,7 +15,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 
 	router.post('/register', async (req, res) => {
 		logger.info('[Push Notification] Registering subscription')
-		const accountability = req.accountability
+		const accountability = (req as any).accountability
 		const itemsService = new ItemsService(collection, { knex: database, schema: (await getSchema()), accountability: accountability })
 		const user = accountability?.user
 		const subscription: PushSubscription | undefined = req.body.subscription;
@@ -54,7 +54,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 
 	router.post('/unregister', async (req, res) => {
 		logger.info('[Push Notification] Unregistering subscription')
-		const accountability = req.accountability
+		const accountability = (req as any).accountability
 		const itemsService = new ItemsService(collection, { knex: database, schema: (await getSchema()), accountability: accountability })
 		const user = accountability?.user
 		const subscription: PushSubscription | undefined = req.body.subscription;
@@ -88,7 +88,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 
 	router.get("/send-notification", async (req, _res) => {
 		logger.info('[Push Notification] Sending all notifications')
-		const itemsService = new ItemsService(collection, { knex: database, schema: (await getSchema()), accountability: req.accountability })
+		const itemsService = new ItemsService(collection, { knex: database, schema: (await getSchema()), accountability: (req as any).accountability })
 		const payload = null;
 		const options = {
 			TTL: req.body.ttl,
@@ -102,7 +102,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 					await webPush
 						.sendNotification(subcription.subscription, payload, options)
 				}
-			} catch (e) {
+			} catch (e: any) {
 				if (e.body === 'push subscription has unsubscribed or expired.\n') {
 					logger.info(`[Push Notification] Subscription ${subcription.id} has unsubscribed or expired. Removing it...`)
 					await itemsService.deleteOne(subcription.id)
@@ -115,7 +115,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 	router.get("/send-notification/:userId", async (req, _res) => {
 		const user = req.params.userId
 		logger.info(`[Push Notification] Sending notifications to user ${user}`)
-		const itemsService = new ItemsService(collection, { knex: database, schema: (await getSchema()), accountability: req.accountability })
+		const itemsService = new ItemsService(collection, { knex: database, schema: (await getSchema()), accountability: (req as any).accountability })
 		const payload = null;
 		const options = {
 			TTL: req.body.ttl,
@@ -129,7 +129,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 					await webPush
 						.sendNotification(subcription.subscription, payload, options)
 				}
-			} catch (e) {
+			} catch (e: any) {
 				if (e.body === 'push subscription has unsubscribed or expired.\n') {
 					logger.info(`[Push Notification] Subscription ${subcription.id} has unsubscribed or expired, removing it...`)
 					await itemsService.deleteOne(subcription.id)
