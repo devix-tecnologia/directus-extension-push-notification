@@ -13,7 +13,7 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
 			for (const collection of collections) {
 				try {
 					await collectionsService.readOne(collection.collection)
-				} catch (e) {
+				} catch (e: any) {
 					if (e?.message !== "You don't have permission to access this.") throw e
 					const fields = ((Array.isArray(directusState.fields) ?
 						directusState.fields :
@@ -24,12 +24,12 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
 			}
 		}
 		if (directusState.relations) {
-			const relationsService = new RelationsService({ knex: database, schema: await getSchema({ database: database, bypassCache: true }) })
+			const relationsService = new RelationsService({ knex: database, schema: await getSchema({ database: database }) })
 			const relations = (Array.isArray(directusState.relations) ? directusState.relations : [directusState.relations]) as Array<{ collection: string, field: string }>
 			for (const relation of relations) {
 				try {
 					await relationsService.readOne(relation.collection, relation.field)
-				} catch (e) {
+				} catch (e: any) {
 					if (e?.message !== "You don't have permission to access this.") throw e
 					await relationsService.createOne(relation, { autoPurgeCache: true, autoPurgeSystemCache: true })
 				}
