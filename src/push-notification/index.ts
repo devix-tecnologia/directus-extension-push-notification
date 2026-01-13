@@ -27,7 +27,7 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 		}
 		const subscriptions = await itemsService.readByQuery({
 			filter: {
-				'endpoint': subscription?.endpoint
+				'endpoint': { _eq: subscription?.endpoint }
 			}
 		})
 		if (subscriptions.length === 0) {
@@ -41,7 +41,11 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 			return
 		}
 		const sub = subscriptions[0];
-		if (subscriptions[0].user != user) {
+		if (!sub) {
+			res.status(500).send('Unexpected error: subscription not found');
+			return;
+		}
+		if (sub.user != user) {
 			logger.info(`[Push Notification] Subscription with endpoint ${subscription.endpoint} already registered on id ${sub.id} but updating user...`);
 			await itemsService.updateOne(sub.id, { user })
 			logger.info(`[Push Notification] Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`);
@@ -66,8 +70,8 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 		}
 		const subscriptions = await itemsService.readByQuery({
 			filter: {
-				'endpoint': subscription?.endpoint
-			}, fields: '*'
+				'endpoint': { _eq: subscription?.endpoint }
+			}, fields: ['*']
 		})
 		if (subscriptions.length === 0) {
 			logger.info(`[Push Notification] Subscription with endpoint ${subscription.endpoint} not registered`);
@@ -75,7 +79,11 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 			return
 		}
 		const sub = subscriptions[0];
-		if (subscriptions[0].user != user) {
+		if (!sub) {
+			res.status(500).send('Unexpected error: subscription not found');
+			return;
+		}
+		if (sub.user != user) {
 			logger.info(`[Push Notification] Subscription with endpoint ${subscription.endpoint} already registered on id ${sub.id} but updating user...`);
 			logger.info(`[Push Notification] Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`);
 			res.status(202).send(`Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`)
@@ -93,10 +101,11 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 		const options = {
 			TTL: req.body.ttl,
 		};
-		const subcriptions = await itemsService.readByQuery({ fields: '*' });
+		const subcriptions = await itemsService.readByQuery({ fields: ['*'] });
 
 		for (const index in subcriptions) {
 			const subcription = subcriptions[index]
+			if (!subcription) continue;
 			try {
 				if (subcription.subscription) {
 					await webPush
@@ -120,10 +129,11 @@ export default defineEndpoint(async (router, { services, database, getSchema, en
 		const options = {
 			TTL: req.body.ttl,
 		};
-		const subcriptions = await itemsService.readByQuery({ fields: '*', filter: { user } });
+		const subcriptions = await itemsService.readByQuery({ fields: ['*'], filter: { user: { _eq: user } } });
 
 		for (const index in subcriptions) {
 			const subcription = subcriptions[index]
+			if (!subcription) continue;
 			try {
 				if (subcription.subscription) {
 					await webPush

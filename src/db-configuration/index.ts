@@ -15,11 +15,7 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
 					await collectionsService.readOne(collection.collection)
 				} catch (e: any) {
 					if (e?.message !== "You don't have permission to access this.") throw e
-					const fields = ((Array.isArray(directusState.fields) ?
-						directusState.fields :
-						[directusState.fields]) as Array<{ collection: string, field: string }>)
-						.filter(field => field.collection == collection.collection)
-					await collectionsService.createOne({ ...collection, fields }, { autoPurgeCache: true, autoPurgeSystemCache: true })
+					await collectionsService.createOne(collection)
 				}
 			}
 		}
@@ -28,10 +24,12 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
 			const relations = (Array.isArray(directusState.relations) ? directusState.relations : [directusState.relations]) as Array<{ collection: string, field: string }>
 			for (const relation of relations) {
 				try {
-					await relationsService.readOne(relation.collection, relation.field)
+					await relationsService.createOne(relation)
 				} catch (e: any) {
-					if (e?.message !== "You don't have permission to access this.") throw e
-					await relationsService.createOne(relation, { autoPurgeCache: true, autoPurgeSystemCache: true })
+					// Ignora erro se a relação já existe
+					if (e?.message && !e.message.includes('already exists') && !e.message.includes('duplicate')) {
+						throw e
+					}
 				}
 			}
 		}
