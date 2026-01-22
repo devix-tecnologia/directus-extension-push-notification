@@ -33,7 +33,9 @@ describe("Push Notification Extension - Setup Hook", () => {
       testSuiteId,
     );
 
-    const collections = (response.data || response) as Array<{ collection: string }>;
+    const collections = (response.data || response) as Array<{
+      collection: string;
+    }>;
     const collectionNames = collections.map((c) => c.collection);
 
     expect(
