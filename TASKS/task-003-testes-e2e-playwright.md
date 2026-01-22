@@ -1,6 +1,6 @@
 # Task 003 — Testes E2E com Playwright
 
-Status: todo  
+Status: in-progress
 Type: feat  
 Assignee: Sidarta Veloso
 
