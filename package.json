@@ -1,59 +1,115 @@
 {
-	"name": "@devix/directus-extension-push-notification",
-	"version": "0.1.2",
-	"type": "module",
-	"dependencies": {
-		"web-push": "^3.6.7"
-	},
-	"directus:extension": {
-		"host": "^10.1.7",
-		"type": "bundle",
-		"path": {
-			"app": "dist/app.js",
-			"api": "dist/api.js"
-		},
-		"entries": [
-			{
-				"type": "endpoint",
-				"name": "push-notification",
-				"source": "src/push-notification/index.ts"
-			},
-			{
-				"type": "hook",
-				"name": "db-configuration",
-				"source": "src/db-configuration/index.ts"
-			}
-		]
-	},
-	"description": "A simple and straightforward push notification management extension for directus",
-	"icon": "extension",
-	"keywords": [
-		"directus",
-		"directus-extension",
-		"directus-custom-bundle",
-		"push-notification"
-	],
-	"scripts": {
-		"build": "directus-extension build",
-		"validate": "directus-extension validate",
-		"postbuild": "cp ./directus-state.json ./dist/directus-state.json",
-		"dev": "directus-extension build -w --no-minify",
-		"link": "directus-extension link",
-		"add-extension": "directus-extension add"
-	},
-	"devDependencies": {
-		"@directus/extensions-sdk": "17.0.4",
-		"@semantic-release/git": "^10.0.1",
-		"@semantic-release/github": "^12.0.2",
-		"@semantic-release/npm": "^13.1.3",
-		"@types/express": "^5.0.6",
-		"@types/node": "^25.0.8",
-		"@types/web-push": "^3.6.4",
-		"semantic-release": "^25.0.2",
-		"taskin": "^1.0.13",
-		"typescript": "^5.9.3"
-	},
-	"publishConfig": {
-		"registry": "https://verdaccio.paas.node07.de.vix.br/"
-	}
+  "name": "@devix-tecnologia/directus-extension-push-notification",
+  "description": "A simple and straightforward push notification management extension for Directus",
+  "icon": "extension",
+  "private": false,
+  "version": "0.1.2",
+  "type": "module",
+  "keywords": [
+    "directus",
+    "directus-extension",
+    "directus-custom-bundle",
+    "push-notification",
+    "web-push",
+    "notifications",
+    "vapid"
+  ],
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "README.md"
+  ],
+  "directus:extension": {
+    "host": "^10.1.7",
+    "type": "bundle",
+    "path": {
+      "app": "dist/app.js",
+      "api": "dist/api.js"
+    },
+    "entries": [
+      {
+        "type": "endpoint",
+        "name": "push-notification",
+        "source": "src/push-notification/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "db-configuration",
+        "source": "src/db-configuration/index.ts"
+      }
+    ]
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devix-tecnologia/directus-extension-push-notification.git"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "dev": "directus-extension build -w --no-minify",
+    "link": "directus-extension link",
+    "validate": "directus-extension validate",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "postbuild": "cp ./directus-state.json ./dist/directus-state.json",
+    "add-extension": "directus-extension add",
+    "test": "pnpm test:e2e",
+    "test:integration": "vitest run tests/*.spec.ts",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "semantic-release": "semantic-release"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "17.0.5",
+    "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.57.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@semantic-release/npm": "^13.1.3",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.10",
+    "@types/web-push": "^3.6.4",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "prettier": "^3.8.1",
+    "semantic-release": "^25.0.2",
+    "taskin": "^2.3.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0",
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "author": "Devix Tecnologia",
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "github": "https://github.com/sidartaveloso",
+      "linkedin": "https://www.linkedin.com/in/sidartaveloso"
+    }
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devix-tecnologia/directus-extension-push-notification/issues"
+  },
+  "homepage": "https://github.com/devix-tecnologia/directus-extension-push-notification#readme"
 }
