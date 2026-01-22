@@ -21,6 +21,36 @@ npm install @devix-tecnologia/directus-extension-push-notification
 
 Or using the Directus Marketplace directly from your Directus instance.
 
+## Development
+
+### Local Development Environment
+
+For local development and testing, you can use Docker Compose:
+
+```bash
+# Build the extension
+pnpm build
+
+# Start Directus with the extension loaded
+docker-compose up
+
+# Access Directus at http://localhost:8055
+# Login: admin@example.com / admin123
+```
+
+The docker-compose.yaml includes:
+- Directus 11.13.4
+- SQLite database (in-memory for fast development)
+- Auto-reload enabled for the extension
+- Pre-configured VAPID keys for testing
+
+To rebuild after changes:
+
+```bash
+pnpm build
+docker-compose restart
+```
+
 ### Environment Configuration
 
 Add the following environment variables to your `.env` file:

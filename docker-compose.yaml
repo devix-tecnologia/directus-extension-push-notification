@@ -1,0 +1,52 @@
+services:
+  directus:
+    image: directus/directus:11.14.1
+    container_name: directus-push-notification-dev
+    environment:
+      # SQLite em memória para desenvolvimento rápido
+      DB_CLIENT: 'sqlite3'
+      DB_FILENAME: '/tmp/data/directus.db'
+
+      KEY: 'dev-key'
+      SECRET: 'dev-secret'
+
+      ADMIN_EMAIL: 'admin@example.com'
+      ADMIN_PASSWORD: 'admin123'
+
+      PUBLIC_URL: 'http://localhost:8055'
+
+      STORAGE_LOCAL_ROOT: '/directus/uploads'
+      EXTENSIONS_PATH: './extensions'
+      EXTENSIONS_AUTO_RELOAD: 'true'
+
+      PERMISSIONS_CACHE_TTL: '0'
+      CACHE_ENABLED: 'false'
+
+      ACCEPT_TERMS: 'true'
+      PROJECT_OWNER: 'admin@example.com'
+
+      # Chaves VAPID para desenvolvimento
+      VAPID_PUBLIC_KEY: 'BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o'
+      VAPID_PRIVATE_KEY: 'xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk'
+
+    ports:
+      - 8055:8055
+
+    volumes:
+      - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
+      - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
+      - ./package.json:/directus/extensions/directus-extension-push-notification/package.json:ro
+      - ./dist/directus-state.json:/directus/extensions/directus-extension-push-notification/dist/directus-state.json:ro
+
+    tmpfs:
+      - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777
+      - /tmp/data:rw,size=64M,mode=777
+
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://0.0.0.0:8055/server/health']
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 60s
+
+    restart: unless-stopped
