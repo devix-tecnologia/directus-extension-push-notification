@@ -17,8 +17,8 @@ services:
       CACHE_ENABLED: "false"
       ACCEPT_TERMS: "true"
       PROJECT_OWNER: "admin@example.com"
-      VAPID_PUBLIC_KEY: "BMxKj9VvPuO8qKMtYqfJ1xLhTxJxZlVzY8fJ0vF9xKj9VvPuO8qKMtYqfJ1xLhTxJxZlVzY8fJ0vF9"
-      VAPID_PRIVATE_KEY: "test-private-key-for-testing-purposes-only"
+      VAPID_PUBLIC_KEY: "BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o"
+      VAPID_PRIVATE_KEY: "xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk"
     volumes:
       - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
       - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
