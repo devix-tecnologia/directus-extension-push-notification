@@ -16,7 +16,7 @@ describe("Push Notification Extension - Setup Hook", () => {
       `Setup Hook Test - Directus ${process.env.DIRECTUS_VERSION}`,
     );
     await setupTestEnvironment(testSuiteId);
-  }, 300000); // 5 minutos de timeout
+  }, 420000); // 7 minutos de timeout
 
   afterAll(async () => {
     await teardownTestEnvironment(testSuiteId);
@@ -33,8 +33,8 @@ describe("Push Notification Extension - Setup Hook", () => {
       testSuiteId,
     );
 
-    const collections = response.data || response;
-    const collectionNames = collections.map((c: any) => c.collection);
+    const collections = (response.data || response) as Array<{ collection: string }>;
+    const collectionNames = collections.map((c) => c.collection);
 
     expect(
       collectionNames,
@@ -55,8 +55,8 @@ describe("Push Notification Extension - Setup Hook", () => {
       testSuiteId,
     );
 
-    const fields = response.data || response;
-    const fieldNames = fields.map((f: any) => f.field);
+    const fields = (response.data || response) as Array<{ field: string }>;
+    const fieldNames = fields.map((f) => f.field);
 
     const expectedFields = [
       "id",

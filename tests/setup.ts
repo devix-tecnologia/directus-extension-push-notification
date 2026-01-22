@@ -82,7 +82,7 @@ export async function teardownTestEnvironment(
 
 async function waitForDirectus(
   testSuiteId: string,
-  maxRetries = 60,
+  maxRetries = 120,
 ): Promise<void> {
   const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
 
