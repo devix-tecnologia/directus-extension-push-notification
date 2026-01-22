@@ -4,6 +4,33 @@ import { logger } from "./test-logger.js";
 
 const execAsync = promisify(exec);
 
+// Detectar qual comando do Docker Compose está disponível
+let dockerComposeCommand: string | null = null;
+
+async function getDockerComposeCommand(): Promise<string> {
+  if (dockerComposeCommand) {
+    return dockerComposeCommand;
+  }
+
+  try {
+    await execAsync("docker compose version");
+    dockerComposeCommand = "docker compose";
+    logger.info("Using 'docker compose' command");
+  } catch {
+    try {
+      await execAsync("docker-compose version");
+      dockerComposeCommand = "docker-compose";
+      logger.info("Using 'docker-compose' command");
+    } catch {
+      throw new Error(
+        "Neither 'docker compose' nor 'docker-compose' command is available",
+      );
+    }
+  }
+
+  return dockerComposeCommand;
+}
+
 export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
   logger.info(`Setting up test environment for suite: ${testSuiteId}`);
 
@@ -14,8 +41,9 @@ export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
 
     // Iniciar o ambiente Docker
     logger.info("Starting Docker Compose...");
+    const composeCmd = await getDockerComposeCommand();
     const { stdout, stderr } = await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.13.4"} docker compose -f docker-compose.test.yml up -d directus`,
+      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.13.4"} ${composeCmd} -f docker-compose.test.yml up -d directus`,
     );
 
     if (stderr) logger.warn(`Docker Compose stderr: ${stderr}`);
@@ -41,8 +69,9 @@ export async function teardownTestEnvironment(
   logger.info(`Tearing down test environment for suite: ${testSuiteId}`);
 
   try {
+    const composeCmd = await getDockerComposeCommand();
     await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} docker compose -f docker-compose.test.yml down -v`,
+      `TEST_SUITE_ID=${testSuiteId} ${composeCmd} -f docker-compose.test.yml down -v`,
     );
     logger.info("✓ Test environment teardown complete");
   } catch (error) {
