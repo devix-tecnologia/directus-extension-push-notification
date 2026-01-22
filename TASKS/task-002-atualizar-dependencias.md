@@ -1,6 +1,6 @@
 # Task 002 — atualizar dependencias
 
-Status: in-progress  
+Status: done
 Type: feat
 Assignee: Sidarta Veloso
 
