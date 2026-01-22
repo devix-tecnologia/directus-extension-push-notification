@@ -1,6 +1,6 @@
 services:
   directus:
-    image: directus/directus:${DIRECTUS_VERSION:-11.13.4}
+    image: directus/directus:${DIRECTUS_VERSION:-11.41.1}
     container_name: directus-push-notification-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
     environment:
       DB_CLIENT: "sqlite3"
@@ -41,7 +41,7 @@ services:
         ]
       interval: 3s
       timeout: 3s
-      retries: 40
+      retries: 120
       start_period: 60s
 
   tests:

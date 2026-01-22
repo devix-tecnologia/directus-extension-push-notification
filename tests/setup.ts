@@ -49,7 +49,13 @@ export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
     if (stderr) logger.warn(`Docker Compose stderr: ${stderr}`);
     logger.info(`Docker Compose stdout: ${stdout}`);
 
+    // Wait for container to be healthy (using docker healthcheck)
+    logger.info("Waiting for container to be healthy...");
+    const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
+    await waitForContainerHealth(containerName);
+
     // Aguardar o Directus estar pronto
+    logger.info("Waiting for Directus to be ready...");
     await waitForDirectus(testSuiteId);
 
     // Obter token de acesso
@@ -80,31 +86,87 @@ export async function teardownTestEnvironment(
   }
 }
 
-async function waitForDirectus(
-  testSuiteId: string,
-  maxRetries = 120,
+async function waitForContainerHealth(
+  containerName: string,
+  retries = 100,
+  delay = 2000,
 ): Promise<void> {
-  const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
-
-  for (let i = 0; i < maxRetries; i++) {
+  for (let i = 0; i < retries; i++) {
     try {
       const { stdout } = await execAsync(
-        `docker exec ${containerName} wget --no-verbose --tries=1 --spider http://127.0.0.1:8055/server/health 2>&1`,
+        `docker inspect --format='{{.State.Health.Status}}' ${containerName}`,
       );
+      const healthStatus = stdout.trim();
 
-      if (stdout.includes("200 OK")) {
-        logger.info("✓ Directus is ready");
+      if (healthStatus === "healthy") {
+        logger.info(`✓ Container ${containerName} is healthy`);
         return;
       }
+
+      logger.info(
+        `Container health: ${healthStatus} (attempt ${i + 1}/${retries})`,
+      );
     } catch {
-      // Ignorar erro e tentar novamente
+      logger.info(
+        `Waiting for container to be created (attempt ${i + 1}/${retries})`,
+      );
     }
 
-    logger.info(`Waiting for Directus to be ready... (${i + 1}/${maxRetries})`);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
-  throw new Error("Directus failed to start within expected time");
+  throw new Error(`Container ${containerName} did not become healthy`);
+}
+
+async function waitForDirectus(
+  testSuiteId: string,
+  retries = 90,
+  delay = 2000,
+): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      logger.info(`Connection attempt ${i + 1}/${retries}`);
+
+      // Check if server is responding via docker exec
+      const healthCheck = await dockerHttpRequest(
+        "GET",
+        "/server/health",
+        undefined,
+        undefined,
+        testSuiteId,
+      );
+
+      if (healthCheck.status !== "ok") {
+        throw new Error("Health check failed");
+      }
+
+      // Try to login to verify if the system is fully ready
+      try {
+        await dockerHttpRequest(
+          "POST",
+          "/auth/login",
+          {
+            email: "admin@example.com",
+            password: "admin123",
+          },
+          undefined,
+          testSuiteId,
+        );
+
+        logger.info("✓ Directus is ready and accepting authentication");
+        return;
+      } catch {
+        throw new Error("System not ready for authentication");
+      }
+    } catch (error) {
+      if (i === retries - 1) {
+        logger.error("Failed to connect to Directus", error);
+        throw new Error("Directus failed to start");
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
 }
 
 async function getAccessToken(testSuiteId: string): Promise<string> {
@@ -131,19 +193,47 @@ export async function dockerHttpRequest(
   headers?: Record<string, string>,
   testSuiteId?: string,
 ): Promise<Record<string, unknown>> {
-  const containerName = `directus-push-notification-${testSuiteId || "main"}-${process.env.DIRECTUS_VERSION || "latest"}`;
+  const suiteId = testSuiteId || "main";
+  const containerName = `directus-push-notification-${suiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
 
-  const curlHeaders = headers
-    ? Object.entries(headers)
-        .map(([key, value]) => `--header '${key}:${value}'`)
-        .join(" ")
-    : "";
+  // Cria um script Node.js para fazer a requisição HTTP
+  const headersJson = JSON.stringify(headers || {}).replace(/"/g, '\\"');
+  const dataJson = data ? JSON.stringify(data).replace(/"/g, '\\"') : "";
 
-  const dataParam = data ? `--data '${JSON.stringify(data)}'` : "";
+  const nodeScript = `
+const http = require('http');
+const options = {
+  hostname: '127.0.0.1',
+  port: 8055,
+  path: '${path}',
+  method: '${method}',
+  headers: JSON.parse("${headersJson}")
+};
+${data ? `const postData = "${dataJson}"; options.headers['Content-Type'] = 'application/json'; options.headers['Content-Length'] = Buffer.byteLength(postData);` : ""}
+const req = http.request(options, (res) => {
+  let data = '';
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => { console.log(data); });
+});
+req.on('error', (error) => { console.error(JSON.stringify({error: error.message})); process.exit(1); });
+${data ? "req.write(postData);" : ""}
+req.end();
+`;
 
-  const { stdout } = await execAsync(
-    `docker exec ${containerName} wget -qO- --method=${method} ${curlHeaders} ${dataParam} --header='Content-Type:application/json' http://127.0.0.1:8055${path}`,
-  );
+  const escapedScript = nodeScript.replace(/\n/g, " ").replace(/'/g, "'\\''");
+  const fullCommand = `docker exec ${containerName} node -e '${escapedScript}'`;
 
-  return JSON.parse(stdout);
+  try {
+    const { stdout } = await execAsync(fullCommand);
+
+    // Se stdout estiver vazio, retornar objeto vazio ao invés de tentar fazer parse
+    if (!stdout || stdout.trim() === "") {
+      return {};
+    }
+
+    return JSON.parse(stdout);
+  } catch (error) {
+    logger.error("Docker HTTP request failed:", error);
+    throw error;
+  }
 }
