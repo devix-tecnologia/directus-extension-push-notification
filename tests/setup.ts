@@ -82,14 +82,14 @@ export async function teardownTestEnvironment(
 
 async function waitForDirectus(
   testSuiteId: string,
-  maxRetries = 40,
+  maxRetries = 60,
 ): Promise<void> {
   const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
 
   for (let i = 0; i < maxRetries; i++) {
     try {
       const { stdout } = await execAsync(
-        `docker exec ${containerName} wget --no-verbose --tries=1 --spider http://localhost:8055/server/health 2>&1`,
+        `docker exec ${containerName} wget --no-verbose --tries=1 --spider http://127.0.0.1:8055/server/health 2>&1`,
       );
 
       if (stdout.includes("200 OK")) {
@@ -111,7 +111,7 @@ async function getAccessToken(testSuiteId: string): Promise<string> {
   const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
 
   const { stdout } = await execAsync(
-    `docker exec ${containerName} wget -qO- --post-data='{"email":"admin@example.com","password":"admin123"}' --header='Content-Type:application/json' http://localhost:8055/auth/login`,
+    `docker exec ${containerName} wget -qO- --post-data='{"email":"admin@example.com","password":"admin123"}' --header='Content-Type:application/json' http://127.0.0.1:8055/auth/login`,
   );
 
   const response = JSON.parse(stdout);
@@ -142,7 +142,7 @@ export async function dockerHttpRequest(
   const dataParam = data ? `--data '${JSON.stringify(data)}'` : "";
 
   const { stdout } = await execAsync(
-    `docker exec ${containerName} wget -qO- --method=${method} ${curlHeaders} ${dataParam} --header='Content-Type:application/json' http://localhost:8055${path}`,
+    `docker exec ${containerName} wget -qO- --method=${method} ${curlHeaders} ${dataParam} --header='Content-Type:application/json' http://127.0.0.1:8055${path}`,
   );
 
   return JSON.parse(stdout);
