@@ -57,9 +57,16 @@ services:
     volumes:
       - ./:/workspace:rw
       - /dev/shm:/dev/shm
-    command: pnpm test:e2e
     networks:
       - directus-test-network
+    command:
+      - bash
+      - -lc
+      - |
+        npm i -g pnpm@10.20.0 && \
+        pnpm install --frozen-lockfile && \
+        pnpm exec playwright install --with-deps && \
+        pnpm test:e2e
 
 networks:
   directus-test-network:

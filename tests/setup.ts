@@ -43,7 +43,7 @@ export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
     logger.info("Starting Docker Compose...");
     const composeCmd = await getDockerComposeCommand();
     const { stdout, stderr } = await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.13.4"} ${composeCmd} -f docker-compose.test.yml up -d directus`,
+      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.14.1"} ${composeCmd} -f docker-compose.test.yml up -d directus`,
     );
 
     if (stderr) logger.warn(`Docker Compose stderr: ${stderr}`);
