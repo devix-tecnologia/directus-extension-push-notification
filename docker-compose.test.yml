@@ -9,7 +9,7 @@ services:
       SECRET: "test-secret"
       ADMIN_EMAIL: "admin@example.com"
       ADMIN_PASSWORD: "admin123"
-      PUBLIC_URL: "http://directus:8055"
+      PUBLIC_URL: "https://directus:8055"
       STORAGE_LOCAL_ROOT: "/directus/uploads"
       EXTENSIONS_PATH: "./extensions"
       EXTENSIONS_AUTO_RELOAD: "true"
