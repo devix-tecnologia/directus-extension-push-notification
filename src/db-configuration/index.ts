@@ -2,7 +2,7 @@ import { defineHook } from "@directus/extensions-sdk";
 import { readInnerFile } from "../utils/files.js";
 
 export default defineHook(({ init }, { services, database, getSchema }) => {
-  const { CollectionsService, RelationsService } = services;
+  const { CollectionsService, FieldsService, RelationsService } = services;
   init("routes.custom.after", async () => {
     const directusState = JSON.parse(
       readInnerFile("directus-state.json").toString(),
@@ -24,6 +24,26 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
           if (e?.message !== "You don't have permission to access this.")
             throw e;
           await collectionsService.createOne(collection);
+        }
+      }
+    }
+    if (directusState.fields) {
+      const fieldsService = new FieldsService({
+        knex: database,
+        schema: await getSchema({ database: database }),
+      });
+      const fields = (
+        Array.isArray(directusState.fields)
+          ? directusState.fields
+          : [directusState.fields]
+      ) as Array<{ collection: string; field: string }>;
+      for (const field of fields) {
+        try {
+          await fieldsService.readOne(field.collection, field.field);
+        } catch (e: any) {
+          if (e?.message !== "You don't have permission to access this.")
+            throw e;
+          await fieldsService.createField(field.collection, field);
         }
       }
     }
