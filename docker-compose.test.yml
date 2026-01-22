@@ -1,0 +1,67 @@
+services:
+  directus:
+    image: directus/directus:${DIRECTUS_VERSION:-11.13.4}
+    container_name: directus-push-notification-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+    environment:
+      DB_CLIENT: "sqlite3"
+      DB_FILENAME: "/tmp/data/directus.db"
+      KEY: "test-key"
+      SECRET: "test-secret"
+      ADMIN_EMAIL: "admin@example.com"
+      ADMIN_PASSWORD: "admin123"
+      PUBLIC_URL: "http://directus:8055"
+      STORAGE_LOCAL_ROOT: "/directus/uploads"
+      EXTENSIONS_PATH: "./extensions"
+      EXTENSIONS_AUTO_RELOAD: "true"
+      PERMISSIONS_CACHE_TTL: "0"
+      CACHE_ENABLED: "false"
+      ACCEPT_TERMS: "true"
+      PROJECT_OWNER: "admin@example.com"
+      VAPID_PUBLIC_KEY: "BMxKj9VvPuO8qKMtYqfJ1xLhTxJxZlVzY8fJ0vF9xKj9VvPuO8qKMtYqfJ1xLhTxJxZlVzY8fJ0vF9"
+      VAPID_PRIVATE_KEY: "test-private-key-for-testing-purposes-only"
+    volumes:
+      - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
+      - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
+      - ./package.json:/directus/extensions/directus-extension-push-notification/package.json:ro
+      - ./directus-state.json:/directus/extensions/directus-extension-push-notification/directus-state.json:ro
+    tmpfs:
+      - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777
+      - /tmp/data:rw,size=64M,mode=777
+    networks:
+      - directus-test-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://0.0.0.0:8055/server/health",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 60s
+
+  tests:
+    image: mcr.microsoft.com/playwright:v1.57.0
+    container_name: directus-push-notification-tests-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+    environment:
+      - CI=true
+      - DIRECTUS_URL=http://directus:8055
+    depends_on:
+      directus:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:rw
+      - /dev/shm:/dev/shm
+    command: pnpm test:e2e
+    networks:
+      - directus-test-network
+
+networks:
+  directus-test-network:
+    name: directus-test-network-${TEST_SUITE_ID:-main}
+    driver: bridge
