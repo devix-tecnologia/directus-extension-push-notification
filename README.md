@@ -25,26 +25,48 @@ Or using the Directus Marketplace directly from your Directus instance.
 
 ### Local Development Environment
 
-For local development and testing, you can use Docker Compose:
+Para desenvolvimento e testes locais, você pode usar o Docker Compose:
 
 ```bash
 # Build the extension
 pnpm build
 
 # Start Directus with the extension loaded
-docker-compose up
+pnpm docker:start
 
 # Access Directus at http://localhost:8055
 # Login: admin@example.com / admin123
 ```
 
-The docker-compose.yaml includes:
-- Directus 11.13.4
-- SQLite database (in-memory for fast development)
-- Auto-reload enabled for the extension
-- Pre-configured VAPID keys for testing
+**Workflow de Desenvolvimento Iterativo:**
 
-To rebuild after changes:
+```bash
+# 1. Subir o ambiente (primeira vez)
+pnpm docker:start
+
+# 2. Fazer mudanças no código
+
+# 3. Rebuild e testar
+pnpm build && pnpm test:e2e:dev
+
+# 4. Se necessário, inspecionar manualmente em http://localhost:8055
+
+# 5. Repetir passos 2-4 conforme necessário
+
+# 6. Derrubar o ambiente quando terminar
+pnpm docker:stop
+```
+
+Este workflow permite executar os testes E2E contra o ambiente de desenvolvimento sem derrubar os containers após cada execução, facilitando o debug e inspeção manual.
+
+**Ambiente Inclui:**
+
+- Directus 11.13.4
+- SQLite database (in-memory para desenvolvimento rápido)
+- Auto-reload habilitado para a extensão
+- VAPID keys pré-configuradas para testes
+
+**Para rebuild após mudanças:**
 
 ```bash
 pnpm build
