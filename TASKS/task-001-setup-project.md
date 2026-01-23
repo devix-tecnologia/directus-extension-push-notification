@@ -1,7 +1,7 @@
 # Task 001 — Setup Project
 
-Status: pending
-Type: chore
+Status: pending  
+Type: chore  
 Assignee: Sidarta Veloso
 
 ## Description

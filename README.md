@@ -1,15 +1,169 @@
 # Directus Extension Push Notification
 
-A simple and straightforward push notification management extension for Directus.
+A simple and straightforward push notification management extension for Directus with multi-device support and granular delivery tracking.
 
 ## Features
 
-- ✅ Automatic collection creation for push notification subscriptions
-- ✅ Register/unregister device subscriptions via REST endpoints
-- ✅ Send push notifications to specific users or all subscribers
-- ✅ Full VAPID (Voluntary Application Server Identification) support
-- ✅ Web Push Protocol compliant
-- ✅ TypeScript support
+- ✅ **Multi-device support** - One user can have multiple active subscriptions (Desktop, Mobile, Tablet)
+- ✅ **Native Directus architecture** - Uses native collections and fields (no custom UI needed)
+- ✅ **Granular delivery tracking** - Track status per device (queued → sending → sent → delivered → read)
+- ✅ **Multi-channel notifications** - Support for push, email, SMS, and in-app notifications
+- ✅ **Automatic subscription management** - Auto-subscribe on login, soft delete on unregister
+- ✅ **Service Worker integration** - Browser notifications with delivery confirmation
+- ✅ **VAPID support** - Full Voluntary Application Server Identification support
+- ✅ **TypeScript support** - Fully typed codebase
+
+## Architecture
+
+### Collections
+
+This extension creates three main collections:
+
+#### 1. `push_subscription` (Devices)
+
+Stores user device subscriptions for push notifications.
+
+**Fields:**
+
+- `id` (uuid) - Primary key
+- `user_id` (m2o → directus_users) - Owner of the subscription
+- `endpoint` (text, unique) - Push subscription endpoint
+- `keys` (json) - Push subscription keys (p256dh, auth)
+- `user_agent` (string) - Browser user agent for device identification
+- `device_name` (string, nullable) - Optional friendly device name
+- `is_active` (boolean, default: true) - Whether the subscription is active
+- `created_at` (timestamp) - When the subscription was created
+- `last_used_at` (timestamp) - Last time the subscription was used
+- `expires_at` (timestamp) - When the subscription expired
+
+#### 2. `user_notification` (Messages)
+
+Stores notification messages for users across all channels.
+
+**Fields:**
+
+- `id` (uuid) - Primary key
+- `title` (string, required) - Notification title
+- `body` (text, required) - Notification content
+- `user_id` (m2o → directus_users) - Recipient
+- `channel` (enum: push/email/sms/in_app) - Delivery channel
+- `priority` (enum: low/normal/high/urgent, default: normal) - Priority level
+- `action_url` (string) - URL to open when clicked
+- `icon_url` (string) - Custom icon URL
+- `data` (json) - Additional data for the app
+- `created_by` (m2o → directus_users) - Creator
+- `created_at` (timestamp) - Creation timestamp
+- `expires_at` (timestamp) - Expiration timestamp
+
+#### 3. `push_delivery` (Join Table)
+
+Tracks delivery status for each notification-device pair.
+
+**Fields:**
+
+- `id` (uuid) - Primary key
+- `user_notification_id` (m2o → user_notification) - Which notification
+- `push_subscription_id` (m2o → push_subscription) - Which device
+- `status` (enum) - queued/sending/sent/delivered/read/failed/expired
+- `attempt_count` (integer, default: 0) - Number of send attempts
+- `max_attempts` (integer, default: 3) - Maximum retry attempts
+- `queued_at` (timestamp) - When queued
+- `sent_at` (timestamp) - When sent to push service
+- `delivered_at` (timestamp) - When delivered to device (Service Worker callback)
+- `read_at` (timestamp) - When user clicked/read
+- `failed_at` (timestamp) - When failed permanently
+- `error_code` (string) - Error code (e.g., "410", "INVALID_SUBSCRIPTION")
+- `error_message` (text) - Detailed error message
+- `retry_after` (timestamp) - When to retry (for transient failures)
+- `metadata` (json) - Additional metadata
+
+### User Field
+
+The extension also adds a field to `directus_users`:
+
+- `push_enabled` (boolean, default: false) - Global toggle for push notifications
+
+## How It Works
+
+### 1. Enable Push Notifications
+
+Users can enable push notifications via User Settings:
+
+1. Login to Directus
+2. Go to User Settings
+3. Enable `push_enabled` field
+4. On next page load, browser will request notification permission
+
+### 2. Auto-Subscribe
+
+When `push_enabled` is true, the app hook automatically:
+
+- Registers a Service Worker
+- Requests notification permission
+- Creates a subscription in `push_subscription`
+
+### 3. Send Notifications
+
+Create a notification via API or Directus UI:
+
+```bash
+POST /items/user_notification
+{
+  "title": "Welcome!",
+  "body": "Thanks for enabling notifications",
+  "user_id": "<user_uuid>",
+  "channel": "push",
+  "priority": "normal"
+}
+```
+
+### 4. Automatic Delivery
+
+The backend hook (`notification-trigger`) automatically:
+
+1. Detects `user_notification.items.create` event
+2. Filters by `channel === 'push'`
+3. Finds all active subscriptions for the user
+4. Creates `push_delivery` records (status: queued)
+5. Sends push to all devices
+6. Updates delivery status (sent/failed)
+
+### 5. Track Delivery
+
+Service Worker callbacks update `push_delivery`:
+
+- **delivered**: When notification arrives at device
+- **read**: When user clicks the notification
+
+## API Endpoints
+
+### Register Subscription
+
+```bash
+POST /push-notification/register
+{
+  "subscription": {
+    "endpoint": "https://fcm.googleapis.com/...",
+    "keys": {
+      "p256dh": "...",
+      "auth": "..."
+    }
+  }
+}
+```
+
+### Unregister Subscription
+
+```bash
+POST /push-notification/unregister
+{
+  "subscription": {
+    "endpoint": "https://fcm.googleapis.com/..."
+  }
+}
+```
+
+**Note:** Unregister performs a soft delete (sets `is_active: false`) to preserve delivery history.
 
 ## Installation
 
