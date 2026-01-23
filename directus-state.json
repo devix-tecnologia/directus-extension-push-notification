@@ -4,532 +4,900 @@
   "vendor": "postgres",
   "collections": [
     {
-      "collection": "PushNotification",
+      "collection": "push_subscription",
       "meta": {
         "accountability": "all",
         "archive_app_filter": true,
-        "archive_field": "status",
-        "archive_value": "archived",
+        "archive_field": "is_active",
+        "archive_value": false,
         "collapse": "open",
-        "collection": "PushNotification",
+        "collection": "push_subscription",
         "color": null,
-        "display_template": null,
+        "display_template": "{{device_name}} - {{user_agent}}",
         "group": null,
         "hidden": false,
-        "icon": null,
+        "icon": "devices",
         "item_duplication_fields": null,
-        "note": "Push Notification",
+        "note": "Push Notification Subscriptions (dispositivos)",
         "preview_url": null,
         "singleton": false,
         "sort": null,
         "sort_field": null,
         "translations": null,
-        "unarchive_value": "draft"
+        "unarchive_value": true
       },
       "schema": {
-        "name": "PushNotification"
+        "name": "push_subscription"
+      }
+    },
+    {
+      "collection": "user_notification",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": false,
+        "collapse": "open",
+        "collection": "user_notification",
+        "color": null,
+        "display_template": "{{title}} - {{user_id}}",
+        "group": null,
+        "hidden": false,
+        "icon": "notifications",
+        "item_duplication_fields": null,
+        "note": "User Notifications (mensagens)",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "created_at",
+        "translations": null
+      },
+      "schema": {
+        "name": "user_notification"
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "meta": {
+        "accountability": "all",
+        "archive_app_filter": false,
+        "collapse": "open",
+        "collection": "push_delivery",
+        "color": null,
+        "display_template": "{{user_notification_id}} \u2192 {{push_subscription_id}} ({{status}})",
+        "group": null,
+        "hidden": false,
+        "icon": "send",
+        "item_duplication_fields": null,
+        "note": "Push Delivery Status (join table)",
+        "preview_url": null,
+        "singleton": false,
+        "sort": null,
+        "sort_field": "queued_at",
+        "translations": null
+      },
+      "schema": {
+        "name": "push_delivery"
       }
     }
   ],
   "fields": [
     {
-      "collection": "PushNotification",
-      "field": "date_created",
-      "type": "timestamp",
+      "collection": "directus_users",
+      "field": "push_enabled",
+      "type": "boolean",
       "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": "datetime",
-        "display_options": {
-          "relative": true
-        },
-        "field": "date_created",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "sort": 4,
-        "special": ["date-created"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_created",
-        "table": "PushNotification",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "date_updated",
-      "type": "timestamp",
-      "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": "datetime",
-        "display_options": {
-          "relative": true
-        },
-        "field": "date_updated",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "sort": 6,
-        "special": ["date-updated"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_updated",
-        "table": "PushNotification",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "endpoint",
-      "type": "text",
-      "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "endpoint",
-        "group": null,
-        "hidden": false,
-        "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": true,
-        "sort": 7,
+        "collection": "directus_users",
+        "field": "push_enabled",
+        "interface": "boolean",
         "special": null,
+        "note": "Habilitar notifica\u00e7\u00f5es push",
+        "display": "boolean",
+        "readonly": false,
+        "hidden": false,
+        "sort": null,
+        "width": "half",
+        "group": null,
         "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
+        "required": false
       },
       "schema": {
-        "name": "endpoint",
-        "table": "PushNotification",
-        "data_type": "text",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": false,
-        "is_unique": true,
+        "name": "push_enabled",
+        "table": "directus_users",
+        "data_type": "boolean",
+        "default_value": false,
+        "is_nullable": true,
         "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
+        "has_auto_increment": false
       }
     },
     {
-      "collection": "PushNotification",
+      "collection": "push_subscription",
       "field": "id",
       "type": "uuid",
       "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
+        "collection": "push_subscription",
         "field": "id",
-        "group": null,
-        "hidden": true,
         "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "sort": 1,
         "special": ["uuid"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
+        "readonly": true,
+        "hidden": true,
+        "required": true
       },
       "schema": {
         "name": "id",
-        "table": "PushNotification",
+        "table": "push_subscription",
         "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": false,
-        "is_unique": true,
         "is_primary_key": true,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
+        "is_nullable": false,
+        "has_auto_increment": false
       }
     },
     {
-      "collection": "PushNotification",
+      "collection": "push_subscription",
+      "field": "user_id",
+      "type": "uuid",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "user_id",
+        "interface": "select-dropdown-m2o",
+        "special": ["m2o"],
+        "required": true,
+        "options": {
+          "template": "{{first_name}} {{last_name}}"
+        }
+      },
+      "schema": {
+        "name": "user_id",
+        "table": "push_subscription",
+        "data_type": "uuid",
+        "is_nullable": false,
+        "is_primary_key": false,
+        "foreign_key_table": "directus_users",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "endpoint",
+      "type": "text",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "endpoint",
+        "interface": "input",
+        "special": null,
+        "required": true,
+        "note": "Push subscription endpoint"
+      },
+      "schema": {
+        "name": "endpoint",
+        "table": "push_subscription",
+        "data_type": "text",
+        "is_nullable": false,
+        "is_unique": true,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "keys",
+      "type": "json",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "keys",
+        "interface": "input-code",
+        "special": ["json"],
+        "required": true,
+        "note": "Push subscription keys (p256dh, auth)"
+      },
+      "schema": {
+        "name": "keys",
+        "table": "push_subscription",
+        "data_type": "json",
+        "is_nullable": false,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "user_agent",
+      "type": "string",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "user_agent",
+        "interface": "input",
+        "special": null,
+        "required": false,
+        "note": "Browser user agent"
+      },
+      "schema": {
+        "name": "user_agent",
+        "table": "push_subscription",
+        "data_type": "varchar",
+        "max_length": 500,
+        "is_nullable": true,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "device_name",
+      "type": "string",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "device_name",
+        "interface": "input",
+        "special": null,
+        "required": false,
+        "note": "Nome amig\u00e1vel do dispositivo"
+      },
+      "schema": {
+        "name": "device_name",
+        "table": "push_subscription",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_nullable": true,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "is_active",
+      "type": "boolean",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "is_active",
+        "interface": "boolean",
+        "special": null,
+        "note": "Se a subscription est\u00e1 ativa"
+      },
+      "schema": {
+        "name": "is_active",
+        "table": "push_subscription",
+        "data_type": "boolean",
+        "default_value": true,
+        "is_nullable": false,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "created_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "created_at",
+        "interface": "datetime",
+        "special": ["date-created"],
+        "readonly": true
+      },
+      "schema": {
+        "name": "created_at",
+        "table": "push_subscription",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "last_used_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "last_used_at",
+        "interface": "datetime",
+        "special": null,
+        "note": "\u00daltimo uso da subscription"
+      },
+      "schema": {
+        "name": "last_used_at",
+        "table": "push_subscription",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "expires_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "expires_at",
+        "interface": "datetime",
+        "special": null,
+        "note": "Expira\u00e7\u00e3o da subscription"
+      },
+      "schema": {
+        "name": "expires_at",
+        "table": "push_subscription",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true,
+        "is_primary_key": false
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "id",
+      "type": "uuid",
+      "meta": {
+        "collection": "user_notification",
+        "field": "id",
+        "interface": "input",
+        "special": ["uuid"],
+        "readonly": true,
+        "hidden": true,
+        "required": true
+      },
+      "schema": {
+        "name": "id",
+        "table": "user_notification",
+        "data_type": "uuid",
+        "is_primary_key": true,
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "title",
+      "type": "string",
+      "meta": {
+        "collection": "user_notification",
+        "field": "title",
+        "interface": "input",
+        "special": null,
+        "required": true,
+        "note": "T\u00edtulo da notifica\u00e7\u00e3o"
+      },
+      "schema": {
+        "name": "title",
+        "table": "user_notification",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "body",
+      "type": "text",
+      "meta": {
+        "collection": "user_notification",
+        "field": "body",
+        "interface": "input-rich-text-md",
+        "special": null,
+        "required": true,
+        "note": "Corpo da mensagem"
+      },
+      "schema": {
+        "name": "body",
+        "table": "user_notification",
+        "data_type": "text",
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "user_id",
+      "type": "uuid",
+      "meta": {
+        "collection": "user_notification",
+        "field": "user_id",
+        "interface": "select-dropdown-m2o",
+        "special": ["m2o"],
+        "required": true,
+        "options": {
+          "template": "{{first_name}} {{last_name}}"
+        }
+      },
+      "schema": {
+        "name": "user_id",
+        "table": "user_notification",
+        "data_type": "uuid",
+        "is_nullable": false,
+        "foreign_key_table": "directus_users",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "channel",
+      "type": "string",
+      "meta": {
+        "collection": "user_notification",
+        "field": "channel",
+        "interface": "select-dropdown",
+        "special": null,
+        "required": true,
+        "note": "Canal de entrega",
+        "options": {
+          "choices": [
+            {
+              "text": "Push",
+              "value": "push"
+            },
+            {
+              "text": "Email",
+              "value": "email"
+            },
+            {
+              "text": "SMS",
+              "value": "sms"
+            },
+            {
+              "text": "In-App",
+              "value": "in_app"
+            }
+          ]
+        }
+      },
+      "schema": {
+        "name": "channel",
+        "table": "user_notification",
+        "data_type": "varchar",
+        "max_length": 50,
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "priority",
+      "type": "string",
+      "meta": {
+        "collection": "user_notification",
+        "field": "priority",
+        "interface": "select-dropdown",
+        "special": null,
+        "note": "Prioridade",
+        "options": {
+          "choices": [
+            {
+              "text": "Low",
+              "value": "low"
+            },
+            {
+              "text": "Normal",
+              "value": "normal"
+            },
+            {
+              "text": "High",
+              "value": "high"
+            },
+            {
+              "text": "Urgent",
+              "value": "urgent"
+            }
+          ]
+        }
+      },
+      "schema": {
+        "name": "priority",
+        "table": "user_notification",
+        "data_type": "varchar",
+        "max_length": 50,
+        "default_value": "normal",
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "action_url",
+      "type": "string",
+      "meta": {
+        "collection": "user_notification",
+        "field": "action_url",
+        "interface": "input",
+        "special": null,
+        "note": "URL ao clicar"
+      },
+      "schema": {
+        "name": "action_url",
+        "table": "user_notification",
+        "data_type": "varchar",
+        "max_length": 500,
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "icon_url",
+      "type": "string",
+      "meta": {
+        "collection": "user_notification",
+        "field": "icon_url",
+        "interface": "input",
+        "special": null,
+        "note": "\u00cdcone customizado"
+      },
+      "schema": {
+        "name": "icon_url",
+        "table": "user_notification",
+        "data_type": "varchar",
+        "max_length": 500,
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "data",
+      "type": "json",
+      "meta": {
+        "collection": "user_notification",
+        "field": "data",
+        "interface": "input-code",
+        "special": ["json"],
+        "note": "Dados adicionais"
+      },
+      "schema": {
+        "name": "data",
+        "table": "user_notification",
+        "data_type": "json",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "created_by",
+      "type": "uuid",
+      "meta": {
+        "collection": "user_notification",
+        "field": "created_by",
+        "interface": "select-dropdown-m2o",
+        "special": ["user-created"],
+        "readonly": true
+      },
+      "schema": {
+        "name": "created_by",
+        "table": "user_notification",
+        "data_type": "uuid",
+        "is_nullable": true,
+        "foreign_key_table": "directus_users",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "created_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "user_notification",
+        "field": "created_at",
+        "interface": "datetime",
+        "special": ["date-created"],
+        "readonly": true
+      },
+      "schema": {
+        "name": "created_at",
+        "table": "user_notification",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "expires_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "user_notification",
+        "field": "expires_at",
+        "interface": "datetime",
+        "special": null,
+        "note": "Expira\u00e7\u00e3o da notifica\u00e7\u00e3o"
+      },
+      "schema": {
+        "name": "expires_at",
+        "table": "user_notification",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "id",
+      "type": "uuid",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "id",
+        "interface": "input",
+        "special": ["uuid"],
+        "readonly": true,
+        "hidden": true,
+        "required": true
+      },
+      "schema": {
+        "name": "id",
+        "table": "push_delivery",
+        "data_type": "uuid",
+        "is_primary_key": true,
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "user_notification_id",
+      "type": "uuid",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "user_notification_id",
+        "interface": "select-dropdown-m2o",
+        "special": ["m2o"],
+        "required": true
+      },
+      "schema": {
+        "name": "user_notification_id",
+        "table": "push_delivery",
+        "data_type": "uuid",
+        "is_nullable": false,
+        "foreign_key_table": "user_notification",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "push_subscription_id",
+      "type": "uuid",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "push_subscription_id",
+        "interface": "select-dropdown-m2o",
+        "special": ["m2o"],
+        "required": true
+      },
+      "schema": {
+        "name": "push_subscription_id",
+        "table": "push_delivery",
+        "data_type": "uuid",
+        "is_nullable": false,
+        "foreign_key_table": "push_subscription",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "push_delivery",
       "field": "status",
       "type": "string",
       "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": "labels",
-        "display_options": {
-          "choices": [
-            {
-              "text": "$t:published",
-              "value": "published",
-              "foreground": "#FFFFFF",
-              "background": "var(--primary)"
-            },
-            {
-              "text": "$t:draft",
-              "value": "draft",
-              "foreground": "#18222F",
-              "background": "#D3DAE4"
-            },
-            {
-              "text": "$t:archived",
-              "value": "archived",
-              "foreground": "#FFFFFF",
-              "background": "var(--warning)"
-            }
-          ],
-          "showAsDot": true
-        },
+        "collection": "push_delivery",
         "field": "status",
-        "group": null,
-        "hidden": false,
         "interface": "select-dropdown",
-        "note": null,
+        "special": null,
+        "required": true,
+        "note": "Status da entrega",
         "options": {
           "choices": [
             {
-              "text": "$t:published",
-              "value": "published"
+              "text": "Queued",
+              "value": "queued"
             },
             {
-              "text": "$t:draft",
-              "value": "draft"
+              "text": "Sending",
+              "value": "sending"
             },
             {
-              "text": "$t:archived",
-              "value": "archived"
+              "text": "Sent",
+              "value": "sent"
+            },
+            {
+              "text": "Delivered",
+              "value": "delivered"
+            },
+            {
+              "text": "Read",
+              "value": "read"
+            },
+            {
+              "text": "Failed",
+              "value": "failed"
+            },
+            {
+              "text": "Expired",
+              "value": "expired"
             }
           ]
-        },
-        "readonly": false,
-        "required": false,
-        "sort": 2,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
+        }
       },
       "schema": {
         "name": "status",
-        "table": "PushNotification",
-        "data_type": "character varying",
-        "default_value": "draft",
-        "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": false,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
+        "table": "push_delivery",
+        "data_type": "varchar",
+        "max_length": 50,
+        "is_nullable": false
       }
     },
     {
-      "collection": "PushNotification",
-      "field": "subscription",
+      "collection": "push_delivery",
+      "field": "attempt_count",
+      "type": "integer",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "attempt_count",
+        "interface": "input",
+        "special": null,
+        "note": "Tentativas de envio"
+      },
+      "schema": {
+        "name": "attempt_count",
+        "table": "push_delivery",
+        "data_type": "integer",
+        "default_value": 0,
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "max_attempts",
+      "type": "integer",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "max_attempts",
+        "interface": "input",
+        "special": null,
+        "note": "M\u00e1ximo de tentativas"
+      },
+      "schema": {
+        "name": "max_attempts",
+        "table": "push_delivery",
+        "data_type": "integer",
+        "default_value": 3,
+        "is_nullable": false
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "queued_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "queued_at",
+        "interface": "datetime",
+        "special": ["date-created"],
+        "readonly": true
+      },
+      "schema": {
+        "name": "queued_at",
+        "table": "push_delivery",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "sent_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "sent_at",
+        "interface": "datetime",
+        "special": null
+      },
+      "schema": {
+        "name": "sent_at",
+        "table": "push_delivery",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "delivered_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "delivered_at",
+        "interface": "datetime",
+        "special": null
+      },
+      "schema": {
+        "name": "delivered_at",
+        "table": "push_delivery",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "read_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "read_at",
+        "interface": "datetime",
+        "special": null
+      },
+      "schema": {
+        "name": "read_at",
+        "table": "push_delivery",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "failed_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "failed_at",
+        "interface": "datetime",
+        "special": null
+      },
+      "schema": {
+        "name": "failed_at",
+        "table": "push_delivery",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "error_code",
+      "type": "string",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "error_code",
+        "interface": "input",
+        "special": null,
+        "note": "C\u00f3digo do erro"
+      },
+      "schema": {
+        "name": "error_code",
+        "table": "push_delivery",
+        "data_type": "varchar",
+        "max_length": 50,
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "error_message",
+      "type": "text",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "error_message",
+        "interface": "input-multiline",
+        "special": null,
+        "note": "Mensagem de erro"
+      },
+      "schema": {
+        "name": "error_message",
+        "table": "push_delivery",
+        "data_type": "text",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "retry_after",
+      "type": "timestamp",
+      "meta": {
+        "collection": "push_delivery",
+        "field": "retry_after",
+        "interface": "datetime",
+        "special": null,
+        "note": "Quando tentar novamente"
+      },
+      "schema": {
+        "name": "retry_after",
+        "table": "push_delivery",
+        "data_type": "timestamp with time zone",
+        "is_nullable": true
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "metadata",
       "type": "json",
       "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "subscription",
-        "group": null,
-        "hidden": false,
-        "interface": "input-block-editor",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": true,
-        "sort": 9,
-        "special": ["cast-json"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
+        "collection": "push_delivery",
+        "field": "metadata",
+        "interface": "input-code",
+        "special": ["json"],
+        "note": "Dados adicionais"
       },
       "schema": {
-        "name": "subscription",
-        "table": "PushNotification",
+        "name": "metadata",
+        "table": "push_delivery",
         "data_type": "json",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": false,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "user",
-      "type": "uuid",
-      "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "user",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "sort": 8,
-        "special": ["m2o"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "user",
-        "table": "PushNotification",
-        "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "user_created",
-      "type": "uuid",
-      "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": "user",
-        "display_options": null,
-        "field": "user_created",
-        "group": null,
-        "hidden": true,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": {
-          "template": "{{avatar.$thumbnail}} {{first_name}} {{last_name}}"
-        },
-        "readonly": true,
-        "required": false,
-        "sort": 3,
-        "special": ["user-created"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "user_created",
-        "table": "PushNotification",
-        "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "user_updated",
-      "type": "uuid",
-      "meta": {
-        "collection": "PushNotification",
-        "conditions": null,
-        "display": "user",
-        "display_options": null,
-        "field": "user_updated",
-        "group": null,
-        "hidden": true,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": {
-          "template": "{{avatar.$thumbnail}} {{first_name}} {{last_name}}"
-        },
-        "readonly": true,
-        "required": false,
-        "sort": 5,
-        "special": ["user-updated"],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "user_updated",
-        "table": "PushNotification",
-        "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id"
-      }
-    }
-  ],
-  "relations": [
-    {
-      "collection": "PushNotification",
-      "field": "user",
-      "related_collection": "directus_users",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "PushNotification",
-        "many_field": "user",
-        "one_allowed_collections": null,
-        "one_collection": "directus_users",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "PushNotification",
-        "column": "user",
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id",
-        "constraint_name": "pushnotification_user_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "user_created",
-      "related_collection": "directus_users",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "PushNotification",
-        "many_field": "user_created",
-        "one_allowed_collections": null,
-        "one_collection": "directus_users",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "PushNotification",
-        "column": "user_created",
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id",
-        "constraint_name": "pushnotification_user_created_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
-      }
-    },
-    {
-      "collection": "PushNotification",
-      "field": "user_updated",
-      "related_collection": "directus_users",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "PushNotification",
-        "many_field": "user_updated",
-        "one_allowed_collections": null,
-        "one_collection": "directus_users",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "PushNotification",
-        "column": "user_updated",
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id",
-        "constraint_name": "pushnotification_user_updated_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "is_nullable": true
       }
     }
   ]

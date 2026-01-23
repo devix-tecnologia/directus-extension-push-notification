@@ -36,6 +36,11 @@
         "type": "hook",
         "name": "db-configuration",
         "source": "src/db-configuration/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "notification-trigger",
+        "source": "src/notification-trigger/index.ts"
       }
     ]
   },
