@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { defineEndpoint } from "@directus/extensions-sdk";
 import webPush from "web-push";
-// const webPush = require("web-push");
 
-const collection = "PushNotification";
+const collection = "push_subscription";
 
 export default defineEndpoint(
   async (router, { services, database, getSchema, env, logger }) => {
@@ -23,23 +23,28 @@ export default defineEndpoint(
         accountability: accountability,
       });
       const user = accountability?.user;
-      const subscription: PushSubscription | undefined = req.body.subscription;
+      const subscription: any = req.body.subscription;
+      const userAgent = req.headers["user-agent"] || "";
 
       if (!(subscription && subscription.endpoint)) {
         logger.info("[Push Notification] Incorrect Subscription payload");
         res.status(400).send(`Incorrect Subscription payload`);
         return;
       }
+
       const subscriptions = await itemsService.readByQuery({
         filter: {
           endpoint: { _eq: subscription?.endpoint },
         },
       });
+
       if (subscriptions.length === 0) {
         const subscriptionId = await itemsService.createOne({
+          user_id: user,
           endpoint: subscription.endpoint,
-          subscription,
-          user,
+          keys: subscription.keys,
+          user_agent: userAgent,
+          is_active: true,
         });
         logger.info(
           `[Push Notification] Subscription with endpoint ${subscription.endpoint} registered on id ${subscriptionId}`,
@@ -51,16 +56,22 @@ export default defineEndpoint(
           );
         return;
       }
+
       const sub = subscriptions[0];
       if (!sub) {
         res.status(500).send("Unexpected error: subscription not found");
         return;
       }
-      if (sub.user != user) {
+
+      if (sub.user_id != user) {
         logger.info(
           `[Push Notification] Subscription with endpoint ${subscription.endpoint} already registered on id ${sub.id} but updating user...`,
         );
-        await itemsService.updateOne(sub.id, { user });
+        await itemsService.updateOne(sub.id, {
+          user_id: user,
+          is_active: true,
+          user_agent: userAgent,
+        });
         logger.info(
           `[Push Notification] Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`,
         );
@@ -71,6 +82,7 @@ export default defineEndpoint(
           );
         return;
       }
+
       logger.info(
         `[Push Notification] Subscription with endpoint ${subscription.endpoint} already registered on id ${sub.id}`,
       );
@@ -90,19 +102,21 @@ export default defineEndpoint(
         accountability: accountability,
       });
       const user = accountability?.user;
-      const subscription: PushSubscription | undefined = req.body.subscription;
+      const subscription: any = req.body.subscription;
 
       if (!(subscription && subscription.endpoint)) {
         logger.info("[Push Notification] Incorrect Subscription payload");
         res.status(400).send(`Incorrect Subscription payload`);
         return;
       }
+
       const subscriptions = await itemsService.readByQuery({
         filter: {
           endpoint: { _eq: subscription?.endpoint },
         },
         fields: ["*"],
       });
+
       if (subscriptions.length === 0) {
         logger.info(
           `[Push Notification] Subscription with endpoint ${subscription.endpoint} not registered`,
@@ -114,26 +128,24 @@ export default defineEndpoint(
           );
         return;
       }
+
       const sub = subscriptions[0];
       if (!sub) {
         res.status(500).send("Unexpected error: subscription not found");
         return;
       }
-      if (sub.user != user) {
-        logger.info(
-          `[Push Notification] Subscription with endpoint ${subscription.endpoint} already registered on id ${sub.id} but updating user...`,
-        );
-        logger.info(
-          `[Push Notification] Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`,
-        );
-        res
-          .status(202)
-          .send(
-            `Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`,
-          );
+
+      if (sub.user_id != user) {
+        res.status(403).send("Subscription does not belong to current user");
         return;
       }
-      await itemsService.deleteOne(sub.id);
+
+      // Soft delete: marcar como inativa ao invés de deletar
+      await itemsService.updateOne(sub.id, {
+        is_active: false,
+        expires_at: new Date().toISOString(),
+      });
+
       logger.info(
         `[Push Notification] Subscription with endpoint ${subscription.endpoint} unregistered`,
       );
@@ -142,87 +154,6 @@ export default defineEndpoint(
         .send(
           `Subscription with endpoint ${subscription.endpoint} unregistered`,
         );
-    });
-
-    router.get("/send-notification", async (req, _res) => {
-      logger.info("[Push Notification] Sending all notifications");
-      const itemsService = new ItemsService(collection, {
-        knex: database,
-        schema: await getSchema(),
-        accountability: (req as any).accountability,
-      });
-      const payload = null;
-      const options = {
-        TTL: req.body.ttl,
-      };
-      const subcriptions = await itemsService.readByQuery({ fields: ["*"] });
-
-      for (const index in subcriptions) {
-        const subcription = subcriptions[index];
-        if (!subcription) continue;
-        try {
-          if (subcription.subscription) {
-            await webPush.sendNotification(
-              subcription.subscription,
-              payload,
-              options,
-            );
-          }
-        } catch (e: any) {
-          if (e.body === "push subscription has unsubscribed or expired.\n") {
-            logger.info(
-              `[Push Notification] Subscription ${subcription.id} has unsubscribed or expired. Removing it...`,
-            );
-            await itemsService.deleteOne(subcription.id);
-            logger.info(
-              `[Push Notification] Subscription ${subcription.id} removed`,
-            );
-          }
-        }
-      }
-      logger.info("[Push Notification] Notifications sent");
-    });
-    router.get("/send-notification/:userId", async (req, _res) => {
-      const user = req.params.userId;
-      logger.info(`[Push Notification] Sending notifications to user ${user}`);
-      const itemsService = new ItemsService(collection, {
-        knex: database,
-        schema: await getSchema(),
-        accountability: (req as any).accountability,
-      });
-      const payload = null;
-      const options = {
-        TTL: req.body.ttl,
-      };
-      const subcriptions = await itemsService.readByQuery({
-        fields: ["*"],
-        filter: { user: { _eq: user } },
-      });
-
-      for (const index in subcriptions) {
-        const subcription = subcriptions[index];
-        if (!subcription) continue;
-        try {
-          if (subcription.subscription) {
-            await webPush.sendNotification(
-              subcription.subscription,
-              payload,
-              options,
-            );
-          }
-        } catch (e: any) {
-          if (e.body === "push subscription has unsubscribed or expired.\n") {
-            logger.info(
-              `[Push Notification] Subscription ${subcription.id} has unsubscribed or expired, removing it...`,
-            );
-            await itemsService.deleteOne(subcription.id);
-            logger.info(
-              `[Push Notification] Subscription ${subcription.id} removed`,
-            );
-          }
-        }
-      }
-      logger.info("[Push Notification] Notifications sent");
     });
   },
 );
