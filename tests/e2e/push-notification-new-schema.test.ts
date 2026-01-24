@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
 const DIRECTUS_EMAIL = process.env.DIRECTUS_EMAIL || "admin@example.com";
-const DIRECTUS_PASSWORD = process.env.DIRECTUS_PASSWORD || "d1r3ctu5";
+const DIRECTUS_PASSWORD = process.env.DIRECTUS_PASSWORD || "admin123";
 
 test.describe("Push Notification - New Schema", () => {
   let authToken: string;
