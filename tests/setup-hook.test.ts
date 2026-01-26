@@ -22,7 +22,7 @@ describe("Push Notification Extension - Setup Hook", () => {
     await teardownTestEnvironment(testSuiteId);
   });
 
-  test("Should have created PushNotification collection", async () => {
+  test("Should have created push_subscription collection", async () => {
     const response = await dockerHttpRequest(
       "GET",
       "/collections",
@@ -40,16 +40,16 @@ describe("Push Notification Extension - Setup Hook", () => {
 
     expect(
       collectionNames,
-      "PushNotification collection should have been created by setup hook",
-    ).toContain("PushNotification");
+      "push_subscription collection should have been created by setup hook",
+    ).toContain("push_subscription");
 
-    logger.info("✓ PushNotification collection created");
+    logger.info("✓ push_subscription collection created");
   });
 
-  test("Should have created PushNotification collection with correct fields", async () => {
+  test("Should have created push_subscription collection with correct fields", async () => {
     const response = await dockerHttpRequest(
       "GET",
-      "/fields/PushNotification",
+      "/fields/push_subscription",
       undefined,
       {
         Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
@@ -62,20 +62,21 @@ describe("Push Notification Extension - Setup Hook", () => {
 
     const expectedFields = [
       "id",
-      "status",
-      "date_created",
-      "date_updated",
-      "user_created",
-      "user_updated",
+      "user_id",
       "endpoint",
-      "subscription",
-      "user",
+      "keys",
+      "user_agent",
+      "device_name",
+      "is_active",
+      "created_at",
+      "last_used_at",
+      "expires_at",
     ];
 
     for (const expectedField of expectedFields) {
       expect(
         fieldNames,
-        `Field "${expectedField}" should exist in PushNotification collection`,
+        `Field "${expectedField}" should exist in push_subscription collection`,
       ).toContain(expectedField);
     }
 
