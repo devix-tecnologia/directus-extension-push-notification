@@ -256,6 +256,7 @@ pnpm run test:integration:ci
 ```
 
 Observações:
+
 - Não use `docker-compose ... down -v` se quiser preservar o banco entre execuções — `-v` apaga volumes e força re-run das migrations.
 - Se você alterar a extensão, mantenha o container rodando e use `pnpm build` seguido de `docker-compose restart` para reduzir o tempo de ciclo.
 
