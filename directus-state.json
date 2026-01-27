@@ -103,7 +103,7 @@
         "name": "push_enabled",
         "table": "directus_users",
         "data_type": "boolean",
-        "default_value": false,
+        "default_value": true,
         "is_nullable": true,
         "is_primary_key": false,
         "has_auto_increment": false

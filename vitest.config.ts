@@ -5,6 +5,9 @@ export default defineConfig({
     globals: true,
     environment: "node",
     testTimeout: 180000,
-    hookTimeout: 300000,
+    hookTimeout: 480000, // 8 minutos para setup Docker
+    // Executar testes de integração sequencialmente para evitar conflitos Docker
+    fileParallelism: false,
+    maxConcurrency: 1,
   },
 });
