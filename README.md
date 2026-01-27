@@ -13,127 +13,34 @@ A simple and straightforward push notification management extension for Directus
 - ✅ **VAPID support** - Full Voluntary Application Server Identification support
 - ✅ **TypeScript support** - Fully typed codebase
 
-## Architecture
-
-### Collections
-
-This extension creates three main collections:
-
-#### 1. `push_subscription` (Devices)
-
-Stores user device subscriptions for push notifications.
-
-**Fields:**
-
-- `id` (uuid) - Primary key
-- `user_id` (m2o → directus_users) - Owner of the subscription
-- `endpoint` (text, unique) - Push subscription endpoint
-- `keys` (json) - Push subscription keys (p256dh, auth)
-- `user_agent` (string) - Browser user agent for device identification
-- `device_name` (string, nullable) - Optional friendly device name
-- `is_active` (boolean, default: true) - Whether the subscription is active
-- `created_at` (timestamp) - When the subscription was created
-- `last_used_at` (timestamp) - Last time the subscription was used
-- `expires_at` (timestamp) - When the subscription expired
-
-#### 2. `user_notification` (Messages)
-
-Stores notification messages for users across all channels.
-
-**Fields:**
-
-- `id` (uuid) - Primary key
-- `title` (string, required) - Notification title
-- `body` (text, required) - Notification content
-- `user_id` (m2o → directus_users) - Recipient
-- `channel` (enum: push/email/sms/in_app) - Delivery channel
-- `priority` (enum: low/normal/high/urgent, default: normal) - Priority level
-- `action_url` (string) - URL to open when clicked
-- `icon_url` (string) - Custom icon URL
-- `data` (json) - Additional data for the app
-- `created_by` (m2o → directus_users) - Creator
-- `created_at` (timestamp) - Creation timestamp
-- `expires_at` (timestamp) - Expiration timestamp
-
-#### 3. `push_delivery` (Join Table)
-
-Tracks delivery status for each notification-device pair.
-
-**Fields:**
-
-- `id` (uuid) - Primary key
-- `user_notification_id` (m2o → user_notification) - Which notification
-- `push_subscription_id` (m2o → push_subscription) - Which device
-- `status` (enum) - queued/sending/sent/delivered/read/failed/expired
-- `attempt_count` (integer, default: 0) - Number of send attempts
-- `max_attempts` (integer, default: 3) - Maximum retry attempts
-- `queued_at` (timestamp) - When queued
-- `sent_at` (timestamp) - When sent to push service
-- `delivered_at` (timestamp) - When delivered to device (Service Worker callback)
-- `read_at` (timestamp) - When user clicked/read
-- `failed_at` (timestamp) - When failed permanently
-- `error_code` (string) - Error code (e.g., "410", "INVALID_SUBSCRIPTION")
-- `error_message` (text) - Detailed error message
-- `retry_after` (timestamp) - When to retry (for transient failures)
-- `metadata` (json) - Additional metadata
-
-### User Field
-
-The extension also adds a field to `directus_users`:
-
-- `push_enabled` (boolean, default: false) - Global toggle for push notifications
-
 ## How It Works
 
-### 1. Enable Push Notifications
+The extension automatically creates three collections when installed:
 
-Users can enable push notifications via User Settings:
+- **`push_subscription`** - Stores device subscriptions (one user can have multiple devices)
+- **`user_notification`** - Stores notification messages with support for multiple channels (push, email, SMS, in-app)
+- **`push_delivery`** - Tracks delivery status for each notification-device pair
 
-1. Login to Directus
-2. Go to User Settings
-3. Enable `push_enabled` field
-4. On next page load, browser will request notification permission
+It also adds a `push_enabled` field to `directus_users` to allow users to toggle notifications on/off.
 
-### 2. Auto-Subscribe
+> 📖 For detailed collection schemas and field specifications, see the [Architecture Documentation](CONTRIBUTING.md#-architecture-reference) in the Contributing Guide.
 
-When `push_enabled` is true, the app hook automatically:
+### Quick Start
 
-- Registers a Service Worker
-- Requests notification permission
-- Creates a subscription in `push_subscription`
+**1. Enable notifications (enabled by default)**
 
-### 3. Send Notifications
+- Users can toggle `push_enabled` in User Settings
+- Browser automatically requests permission on first login
 
-Create a notification via API or Directus UI:
+**2. Send a notification**
 
-```bash
-POST /items/user_notification
-{
-  "title": "Welcome!",
-  "body": "Thanks for enabling notifications",
-  "user_id": "<user_uuid>",
-  "channel": "push",
-  "priority": "normal"
-}
-```
+- Create a record in `user_notification` collection via API or Directus UI
+- Specify `channel: "push"` and target `user_id`
 
-### 4. Automatic Delivery
+**3. Track delivery**
 
-The backend hook (`notification-trigger`) automatically:
-
-1. Detects `user_notification.items.create` event
-2. Filters by `channel === 'push'`
-3. Finds all active subscriptions for the user
-4. Creates `push_delivery` records (status: queued)
-5. Sends push to all devices
-6. Updates delivery status (sent/failed)
-
-### 5. Track Delivery
-
-Service Worker callbacks update `push_delivery`:
-
-- **delivered**: When notification arrives at device
-- **read**: When user clicks the notification
+- Check `push_delivery` collection for status of each device
+- Status flow: queued → sending → sent → delivered → read
 
 ## API Endpoints
 
@@ -167,100 +74,17 @@ POST /push-notification/unregister
 
 ## Installation
 
-Install the extension via npm:
+Install the extension via pnpm:
 
 ```bash
-npm install @devix-tecnologia/directus-extension-push-notification
+pnpm add @devix-tecnologia/directus-extension-push-notification
 ```
 
 Or using the Directus Marketplace directly from your Directus instance.
 
-## Development
+## Configuration
 
-### Local Development Environment
-
-Para desenvolvimento e testes locais, você pode usar o Docker Compose:
-
-```bash
-# Build the extension
-pnpm build
-
-# Start Directus with the extension loaded
-pnpm docker:start
-
-# Access Directus at http://localhost:8055
-# Login: admin@example.com / admin123
-```
-
-**Workflow de Desenvolvimento Iterativo:**
-
-```bash
-# 1. Subir o ambiente (primeira vez)
-pnpm docker:start
-
-# 2. Fazer mudanças no código
-
-# 3. Rebuild e testar
-pnpm build && pnpm test:e2e:dev
-
-# 4. Se necessário, inspecionar manualmente em http://localhost:8055
-
-# 5. Repetir passos 2-4 conforme necessário
-
-# 6. Derrubar o ambiente quando terminar
-pnpm docker:stop
-```
-
-Este workflow permite executar os testes E2E contra o ambiente de desenvolvimento sem derrubar os containers após cada execução, facilitando o debug e inspeção manual.
-
-**Ambiente Inclui:**
-
-- Directus 11.13.4
-- SQLite database (in-memory para desenvolvimento rápido)
-- Auto-reload habilitado para a extensão
-- VAPID keys pré-configuradas para testes
-
-**Para rebuild após mudanças:**
-
-```bash
-pnpm build
-docker-compose restart
-```
-
-### Testes de Integração (Docker)
-
-Para reduzir tempo de feedback, o repositório inclui scripts npm que controlam o ciclo do ambiente de testes (start → run → stop).
-
-- Subir apenas o ambiente (mantenha rodando entre execuções):
-
-```bash
-pnpm run test:integration:env-up
-```
-
-- Rodar os testes de integração:
-
-```bash
-pnpm run test:integration:run
-```
-
-- Trazer o ambiente abaixo (preserva o volume do DB):
-
-```bash
-pnpm run test:integration:env-down
-```
-
-- Fluxo único (up → run → down, preservando o código de saída dos testes):
-
-```bash
-pnpm run test:integration:ci
-```
-
-Observações:
-
-- Não use `docker-compose ... down -v` se quiser preservar o banco entre execuções — `-v` apaga volumes e força re-run das migrations.
-- Se você alterar a extensão, mantenha o container rodando e use `pnpm build` seguido de `docker-compose restart` para reduzir o tempo de ciclo.
-
-### Environment Configuration
+### VAPID Keys
 
 Add the following environment variables to your `.env` file:
 
@@ -271,9 +95,7 @@ VAPID_PRIVATE_KEY=your_private_vapid_key
 
 **Important:** The VAPID keys must be a valid pair, and the public key must match the one used in your client application.
 
-#### Generating VAPID Keys
-
-You can generate VAPID keys using the `web-push` library:
+**Generating VAPID Keys:**
 
 ```bash
 npx web-push generate-vapid-keys
@@ -348,22 +170,6 @@ Sends a notification to all registered devices of a specific user.
 
 **Response:** 200 OK
 
-## PushNotification Collection
-
-The extension automatically creates a collection with the following schema:
-
-| Field        | Type      | Description                            |
-| ------------ | --------- | -------------------------------------- |
-| id           | uuid      | Primary key                            |
-| status       | string    | Subscription status                    |
-| date_created | timestamp | Creation date                          |
-| date_updated | timestamp | Last update date                       |
-| user_created | uuid      | User who created the record            |
-| user_updated | uuid      | User who last updated the record       |
-| endpoint     | text      | Push notification service endpoint     |
-| subscription | json      | Complete subscription object with keys |
-| user         | uuid      | Related Directus user                  |
-
 ## Client Integration Example
 
 Here's a basic example of how to integrate push notifications in your web application:
@@ -401,10 +207,22 @@ if (permission === "granted") {
 - Node.js 18+ recommended
 - Valid VAPID key pair
 
+## Development
+
+Interested in contributing? Check out our [Contributing Guide](CONTRIBUTING.md) for:
+
+- Local development setup
+- Testing instructions
+- Code standards
+- Release process
+
 ## License
 
 MIT
 
 ## Support
 
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/your-org/directus-extension-push-notification).
+For issues, questions, or contributions, please visit:
+
+- **Issues**: [GitHub Issues](https://github.com/devix-tecnologia/directus-extension-push-notification/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/devix-tecnologia/directus-extension-push-notification/discussions)

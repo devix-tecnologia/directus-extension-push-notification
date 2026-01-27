@@ -393,6 +393,95 @@ docker logs directus-push-notification-hook-11-13-4-11.13.4
 - [Web Push Protocol](https://datatracker.ietf.org/doc/html/rfc8030)
 - [VAPID Protocol](https://datatracker.ietf.org/doc/html/rfc8292)
 
+## 🏛️ Architecture Reference
+
+### Collections Schema
+
+This section provides detailed technical specifications for developers.
+
+#### 1. `push_subscription` (Devices)
+
+Stores user device subscriptions for push notifications.
+
+**Fields:**
+
+- `id` (uuid) - Primary key
+- `user_id` (m2o → directus_users) - Owner of the subscription
+- `endpoint` (text, unique) - Push subscription endpoint
+- `keys` (json) - Push subscription keys (p256dh, auth)
+- `user_agent` (string) - Browser user agent for device identification
+- `device_name` (string, nullable) - Optional friendly device name
+- `is_active` (boolean, default: true) - Whether the subscription is active
+- `created_at` (timestamp) - When the subscription was created
+- `last_used_at` (timestamp) - Last time the subscription was used
+- `expires_at` (timestamp) - When the subscription expired
+
+#### 2. `user_notification` (Messages)
+
+Stores notification messages for users across all channels.
+
+**Fields:**
+
+- `id` (uuid) - Primary key
+- `title` (string, required) - Notification title
+- `body` (text, required) - Notification content
+- `user_id` (m2o → directus_users) - Recipient
+- `channel` (enum: push/email/sms/in_app) - Delivery channel
+- `priority` (enum: low/normal/high/urgent, default: normal) - Priority level
+- `action_url` (string) - URL to open when clicked
+- `icon_url` (string) - Custom icon URL
+- `data` (json) - Additional data for the app
+- `created_by` (m2o → directus_users) - Creator
+- `created_at` (timestamp) - Creation timestamp
+- `expires_at` (timestamp) - Expiration timestamp
+
+#### 3. `push_delivery` (Join Table)
+
+Tracks delivery status for each notification-device pair.
+
+**Fields:**
+
+- `id` (uuid) - Primary key
+- `user_notification_id` (m2o → user_notification) - Which notification
+- `push_subscription_id` (m2o → push_subscription) - Which device
+- `status` (enum) - queued/sending/sent/delivered/read/failed/expired
+- `attempt_count` (integer, default: 0) - Number of send attempts
+- `max_attempts` (integer, default: 3) - Maximum retry attempts
+- `queued_at` (timestamp) - When queued
+- `sent_at` (timestamp) - When sent to push service
+- `delivered_at` (timestamp) - When delivered to device (Service Worker callback)
+- `read_at` (timestamp) - When user clicked/read
+- `failed_at` (timestamp) - When failed permanently
+- `error_code` (string) - Error code (e.g., "410", "INVALID_SUBSCRIPTION")
+- `error_message` (text) - Detailed error message
+- `retry_after` (timestamp) - When to retry (for transient failures)
+- `metadata` (json) - Additional metadata
+
+#### User Field Extension
+
+The extension adds a field to `directus_users`:
+
+- `push_enabled` (boolean, default: true) - Global toggle for push notifications
+
+### Flow Sequence
+
+**Auto-Subscribe Flow:**
+
+1. User logs in with `push_enabled: true`
+2. App hook registers Service Worker
+3. Browser requests notification permission
+4. On grant, creates subscription in `push_subscription`
+
+**Notification Delivery Flow:**
+
+1. `user_notification` record created with `channel: "push"`
+2. Backend hook (`notification-trigger`) detects event
+3. Finds all active subscriptions for target user
+4. Creates `push_delivery` records (status: queued)
+5. Sends push to all devices via web-push
+6. Updates delivery status (sent/failed)
+7. Service Worker callbacks update status (delivered/read)
+
 ## 💬 Support
 
 - **Issues**: [GitHub Issues](https://github.com/devix-tecnologia/directus-extension-push-notification/issues)

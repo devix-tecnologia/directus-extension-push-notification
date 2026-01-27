@@ -27,16 +27,15 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
         }
       }
     }
+
     if (directusState.fields) {
       const fieldsService = new FieldsService({
         knex: database,
         schema: await getSchema({ database: database }),
       });
-      const fields = (
-        Array.isArray(directusState.fields)
-          ? directusState.fields
-          : [directusState.fields]
-      ) as Array<{ collection: string; field: string }>;
+      const fields = Array.isArray(directusState.fields)
+        ? directusState.fields
+        : [directusState.fields];
       for (const field of fields) {
         try {
           await fieldsService.readOne(field.collection, field.field);
@@ -47,6 +46,7 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
         }
       }
     }
+
     if (directusState.relations) {
       const relationsService = new RelationsService({
         knex: database,
