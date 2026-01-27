@@ -8,7 +8,9 @@ export default defineHook(({ action }, { services }) => {
   action(
     "user_notification.items.create",
     async ({ payload }, { schema, database }) => {
-      console.log('🔔 [HOOK] user_notification.items.create triggered', { payload });
+      console.log("🔔 [HOOK] user_notification.items.create triggered", {
+        payload,
+      });
       const notification = payload;
 
       // Apenas processar se channel === 'push'
@@ -18,7 +20,7 @@ export default defineHook(({ action }, { services }) => {
         );
         return;
       }
-      console.log('✅ [HOOK] Channel is push, continuing...');
+      console.log("✅ [HOOK] Channel is push, continuing...");
 
       // Configurar VAPID keys (precisa ser feito aqui pois env não está disponível no escopo externo)
       const env = process.env;
@@ -46,13 +48,17 @@ export default defineHook(({ action }, { services }) => {
         const user = await usersService.readOne(notification.user_id, {
           fields: ["id", "push_enabled"],
         });
-        console.log('👤 [HOOK] User loaded:', { id: user.id, push_enabled: user.push_enabled, type: typeof user.push_enabled });
+        console.log("👤 [HOOK] User loaded:", {
+          id: user.id,
+          push_enabled: user.push_enabled,
+          type: typeof user.push_enabled,
+        });
 
         if (!user.push_enabled) {
           console.log(`Usuário ${user.id} não tem push habilitado`);
           return;
         }
-        console.log('✅ [HOOK] User has push enabled, continuing...');
+        console.log("✅ [HOOK] User has push enabled, continuing...");
 
         // Buscar TODAS as subscriptions ATIVAS do usuário (múltiplos dispositivos)
         const subscriptions = await subscriptionsService.readByQuery({
@@ -62,19 +68,25 @@ export default defineHook(({ action }, { services }) => {
           },
           limit: -1,
         });
-        console.log(`📱 [HOOK] Found ${subscriptions.length} active subscriptions`);
+        console.log(
+          `📱 [HOOK] Found ${subscriptions.length} active subscriptions`,
+        );
 
         if (subscriptions.length === 0) {
           console.log(`Usuário ${user.id} não possui subscriptions ativas`);
           return;
         }
-        console.log('✅ [HOOK] Has active subscriptions, creating deliveries...');
+        console.log(
+          "✅ [HOOK] Has active subscriptions, creating deliveries...",
+        );
 
         // Criar registros na push_delivery para cada dispositivo (status: queued)
         const deliveryRecords: Array<any> = [];
 
         for (const sub of subscriptions) {
-          console.log(`📦 [HOOK] Creating delivery for subscription ${sub.id}...`);
+          console.log(
+            `📦 [HOOK] Creating delivery for subscription ${sub.id}...`,
+          );
           const deliveryRecord = await deliveryService.createOne({
             user_notification_id: notification.id,
             push_subscription_id: sub.id,
