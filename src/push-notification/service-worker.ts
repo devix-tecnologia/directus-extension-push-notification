@@ -1,77 +1,160 @@
 /// <reference lib="webworker" />
 
+import type {
+  DeliveryStatus,
+  DeliveryStatusUpdater,
+  Logger,
+  LogMessage,
+  PushEventHandler,
+  PushNotificationData,
+} from "./service-worker.types.js";
+
 // Service Worker para receber e exibir push notifications
 declare const self: ServiceWorkerGlobalScope;
 
-interface PushNotificationData {
-  title?: string;
-  body?: string;
-  icon_url?: string;
-  action_url?: string;
-  priority?: "low" | "normal" | "high" | "urgent";
-  user_notification_id?: string;
-  push_delivery_id?: string;
+/**
+ * Logger para Service Worker context
+ * Envia logs para todos os clients conectados via postMessage
+ */
+class ServiceWorkerLogger implements Logger {
+  private async notifyClients(level: string, message: string, error?: Error) {
+    const clients = await self.clients.matchAll();
+    const logData: LogMessage = {
+      type: "SW_LOG",
+      level,
+      message,
+      error: error
+        ? { message: error.message, stack: error.stack }
+        : undefined,
+      timestamp: new Date().toISOString(),
+    };
+
+    clients.forEach((client) => {
+      client.postMessage(logData);
+    });
+  }
+
+  error(message: string, error?: Error): void {
+    this.notifyClients("error", message, error).catch(() => {
+      // Fallback silencioso se não conseguir notificar clients
+    });
+  }
+
+  info(message: string): void {
+    this.notifyClients("info", message).catch(() => {
+      // Fallback silencioso se não conseguir notificar clients
+    });
+  }
 }
 
-self.addEventListener("push", (event: PushEvent) => {
-  const data: PushNotificationData = event.data ? event.data.json() : {};
+/**
+ * Serviço para atualizar status de entrega no backend
+ */
+class PushDeliveryStatusUpdater implements DeliveryStatusUpdater {
+  constructor(private readonly logger: Logger) {}
 
-  const options: NotificationOptions = {
-    body: data.body || "Nova notificação do Directus",
-    icon: data.icon_url || "/admin/favicon.ico",
-    badge: "/admin/favicon.ico",
-    tag: data.user_notification_id || "directus-notification",
-    data: {
-      url: data.action_url || "/admin/notifications",
-      user_notification_id: data.user_notification_id,
-      push_delivery_id: data.push_delivery_id,
-    },
-    requireInteraction: data.priority === "urgent" || data.priority === "high",
-  };
+  async updateDeliveryStatus(
+    deliveryId: string,
+    status: DeliveryStatus,
+  ): Promise<void> {
+    try {
+      const timestampField =
+        status === "delivered" ? "delivered_at" : "read_at";
 
-  event.waitUntil(
-    Promise.all([
-      // Exibe a notificação
+      await fetch(`/items/push_delivery/${deliveryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          [timestampField]: new Date().toISOString(),
+        }),
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to update delivery status to ${status}`,
+        error as Error,
+      );
+      throw error;
+    }
+  }
+}
+
+/**
+ * Handler para eventos de push notification
+ */
+class PushNotificationHandler implements PushEventHandler {
+  constructor(
+    private readonly logger: Logger,
+    private readonly deliveryUpdater: DeliveryStatusUpdater,
+  ) {}
+
+  async handlePush(event: PushEvent): Promise<void> {
+    const data: PushNotificationData = event.data ? event.data.json() : {};
+
+    const options: NotificationOptions = {
+      body: data.body || "Nova notificação do Directus",
+      icon: data.icon_url || "/admin/favicon.ico",
+      badge: "/admin/favicon.ico",
+      tag: data.user_notification_id || "directus-notification",
+      data: {
+        url: data.action_url || "/admin/notifications",
+        user_notification_id: data.user_notification_id,
+        push_delivery_id: data.push_delivery_id,
+      },
+      requireInteraction:
+        data.priority === "urgent" || data.priority === "high",
+    };
+
+    const tasks: Promise<unknown>[] = [
       self.registration.showNotification(data.title || "Directus", options),
+    ];
 
-      // Confirma entrega (delivered) ao backend na push_delivery
-      data.push_delivery_id
-        ? fetch(`/items/push_delivery/${data.push_delivery_id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              status: "delivered",
-              delivered_at: new Date().toISOString(),
-            }),
-          }).catch((err: Error) =>
-            console.error("Erro ao confirmar entrega:", err),
-          )
-        : Promise.resolve(),
-    ]),
-  );
+    // Confirma entrega (delivered) ao backend
+    if (data.push_delivery_id) {
+      tasks.push(
+        this.deliveryUpdater
+          .updateDeliveryStatus(data.push_delivery_id, "delivered")
+          .catch((error: Error) => {
+            this.logger.error("Failed to confirm delivery", error);
+          }),
+      );
+    }
+
+    await Promise.all(tasks);
+  }
+
+  async handleNotificationClick(event: NotificationEvent): Promise<void> {
+    event.notification.close();
+
+    // Marca como LIDA (read) na push_delivery
+    if (event.notification.data?.push_delivery_id) {
+      await this.deliveryUpdater
+        .updateDeliveryStatus(event.notification.data.push_delivery_id, "read")
+        .catch((error: Error) => {
+          this.logger.error("Failed to mark notification as read", error);
+        });
+    }
+
+    // Abre o painel de notificações do Directus
+    await self.clients.openWindow(
+      event.notification.data?.url || "/admin/notifications",
+    );
+  }
+}
+
+// Inicialização
+const logger = new ServiceWorkerLogger();
+const deliveryUpdater = new PushDeliveryStatusUpdater(logger);
+const notificationHandler = new PushNotificationHandler(
+  logger,
+  deliveryUpdater,
+);
+
+// Registra event listeners
+self.addEventListener("push", (event: PushEvent) => {
+  event.waitUntil(notificationHandler.handlePush(event));
 });
 
 self.addEventListener("notificationclick", (event: NotificationEvent) => {
-  event.notification.close();
-
-  // Marca como LIDA (read) na push_delivery
-  if (event.notification.data?.push_delivery_id) {
-    fetch(`/items/push_delivery/${event.notification.data.push_delivery_id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "read",
-        read_at: new Date().toISOString(),
-      }),
-    }).catch((err: Error) =>
-      console.error("Erro ao marcar notificação como lida:", err),
-    );
-  }
-
-  // Abre o painel de notificações do Directus
-  event.waitUntil(
-    self.clients.openWindow(
-      event.notification.data?.url || "/admin/notifications",
-    ),
-  );
+  event.waitUntil(notificationHandler.handleNotificationClick(event));
 });

@@ -84,24 +84,24 @@
   "devDependencies": {
     "@directus/extensions-sdk": "17.0.5",
     "@eslint/js": "^9.39.2",
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "^1.58.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.2",
     "@semantic-release/npm": "^13.1.3",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.10",
     "@types/web-push": "^3.6.4",
-    "axios": "^1.13.2",
+    "axios": "^1.13.3",
     "dotenv": "^17.2.3",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^16.5.0",
+    "globals": "^17.2.0",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.2",
-    "taskin": "^2.3.0",
+    "taskin": "^2.3.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.50.0",
-    "vitest": "^4.0.16"
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "web-push": "^3.6.7"

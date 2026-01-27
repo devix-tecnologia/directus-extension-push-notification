@@ -20,6 +20,7 @@ export default defineHook(({ action }, { services }) => {
         );
         return;
       }
+
       console.log("✅ [HOOK] Channel is push, continuing...");
 
       // Configurar VAPID keys (precisa ser feito aqui pois env não está disponível no escopo externo)
@@ -58,6 +59,7 @@ export default defineHook(({ action }, { services }) => {
           console.log(`Usuário ${user.id} não tem push habilitado`);
           return;
         }
+
         console.log("✅ [HOOK] User has push enabled, continuing...");
 
         // Buscar TODAS as subscriptions ATIVAS do usuário (múltiplos dispositivos)
@@ -76,6 +78,7 @@ export default defineHook(({ action }, { services }) => {
           console.log(`Usuário ${user.id} não possui subscriptions ativas`);
           return;
         }
+
         console.log(
           "✅ [HOOK] Has active subscriptions, creating deliveries...",
         );
