@@ -227,6 +227,38 @@ pnpm build
 docker-compose restart
 ```
 
+### Testes de Integração (Docker)
+
+Para reduzir tempo de feedback, o repositório inclui scripts npm que controlam o ciclo do ambiente de testes (start → run → stop).
+
+- Subir apenas o ambiente (mantenha rodando entre execuções):
+
+```bash
+pnpm run test:integration:env-up
+```
+
+- Rodar os testes de integração:
+
+```bash
+pnpm run test:integration:run
+```
+
+- Trazer o ambiente abaixo (preserva o volume do DB):
+
+```bash
+pnpm run test:integration:env-down
+```
+
+- Fluxo único (up → run → down, preservando o código de saída dos testes):
+
+```bash
+pnpm run test:integration:ci
+```
+
+Observações:
+- Não use `docker-compose ... down -v` se quiser preservar o banco entre execuções — `-v` apaga volumes e força re-run das migrations.
+- Se você alterar a extensão, mantenha o container rodando e use `pnpm build` seguido de `docker-compose restart` para reduzir o tempo de ciclo.
+
 ### Environment Configuration
 
 Add the following environment variables to your `.env` file:

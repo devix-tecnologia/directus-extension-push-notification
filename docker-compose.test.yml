@@ -1,6 +1,6 @@
 services:
   directus:
-    image: directus/directus:${DIRECTUS_VERSION:-11.41.1}
+    image: directus/directus:${DIRECTUS_VERSION:-11.14.1}
     container_name: directus-push-notification-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
     environment:
       DB_CLIENT: "sqlite3"
