@@ -2,16 +2,28 @@
 import { defineHook } from "@directus/extensions-sdk";
 import webpush from "web-push";
 
-export default defineHook(({ action }, { services }) => {
+export default defineHook(({ filter, action }, { services }) => {
   const { ItemsService } = services;
 
+  filter("user_notification.items.create", async (payload) => {
+    console.log("🔔 [FILTER] user_notification.items.create", { payload });
+    return payload;
+  });
+
   action(
-    "user_notification.items.create",
-    async ({ payload }, { schema, database }) => {
-      console.log("🔔 [HOOK] user_notification.items.create triggered", {
-        payload,
+    "items.create",
+    async (meta, { schema, database, accountability }) => {
+      // Apenas processar se for user_notification
+      if (meta.collection !== "user_notification") {
+        return;
+      }
+
+      console.log("🔔 [HOOK] items.create triggered for user_notification", {
+        key: meta.key,
+        payload: meta.payload,
       });
-      const notification = payload;
+
+      const notification = { ...meta.payload, id: meta.key };
 
       // Apenas processar se channel === 'push'
       if (notification.channel !== "push") {

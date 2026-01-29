@@ -5,3 +5,7 @@ dist
 test-results
 playwright-report
 directus-state.json.backup
+
+# pnpm
+.pnpm-store
+.pnpm-debug.log
