@@ -133,9 +133,12 @@ export default defineHook(({ filter, action }, { services }) => {
             });
 
             // Reconstruir objeto subscription
+            // Se keys vier como string, fazer parse
+            const keys =
+              typeof sub.keys === "string" ? JSON.parse(sub.keys) : sub.keys;
             const subscription = {
               endpoint: sub.endpoint,
-              keys: sub.keys,
+              keys: keys,
             };
 
             // Payload inclui ID da push_delivery para callback do Service Worker
