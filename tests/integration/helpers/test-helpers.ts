@@ -71,7 +71,8 @@ export async function createPushSubscription(
         options.endpoint ||
         `https://fcm.googleapis.com/fcm/send/test-${Date.now()}`,
       keys: options.keys || {
-        p256dh: "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUK8S5ldX7VYiTsWjyHxWyEVX_PMNpG7-vFQOUG8",
+        p256dh:
+          "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUK8S5ldX7VYiTsWjyHxWyEVX_PMNpG7-vFQOUG8",
         auth: "iQh8SfVxcq0Meu_9MNaLhg",
       },
       user_agent: options.user_agent || "Test User Agent",

@@ -150,57 +150,61 @@ test.describe("Push Notification Extension - E2E Tests", () => {
   });
 
   test("deve listar as coleções customizadas criadas pelo hook", async () => {
-    // Usar página compartilhada
-    await sharedPage.goto("/admin", { waitUntil: "networkidle" });
+    // Verificar via API que as coleções existem (podem estar hidden na navegação)
+    const apiContext = sharedPage.context().request;
 
-    // Verificar se há botão Continue novamente (pode aparecer ao navegar)
-    const continueButton = sharedPage.locator(
-      'button:has-text("Continue"), button:has-text("Continuar"), button[type="submit"]:has-text("Continue"), button[type="submit"]:has-text("Continuar")',
-    );
-    const hasContinueButton = await continueButton
-      .first()
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-
-    if (hasContinueButton) {
-      await continueButton.first().click();
-      await sharedPage.waitForLoadState("networkidle");
-      await sharedPage.waitForTimeout(2000);
-    }
-
-    // Aguardar navegação
-    const nav = await sharedPage.waitForSelector(
-      '#navigation, aside[role="navigation"], [data-test-id="navigation"]',
-      {
-        timeout: 20000,
+    // Login para obter token
+    const loginResponse = await apiContext.post("/auth/login", {
+      data: {
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
       },
+    });
+
+    const loginData = await loginResponse.json();
+    const accessToken = loginData.data?.access_token;
+
+    expect(accessToken).toBeTruthy();
+
+    // Buscar coleções via API
+    const collectionsResponse = await apiContext.get("/collections", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    expect(collectionsResponse.ok()).toBeTruthy();
+
+    const collectionsData = await collectionsResponse.json();
+    const collections = collectionsData.data || [];
+    const collectionNames = collections.map(
+      (c: { collection: string }) => c.collection,
     );
 
-    const navText = (await nav.textContent()) || "";
+    // Verificar se as coleções de push notification existem
+    const expectedCollections = [
+      "push_subscription",
+      "user_notification",
+      "push_delivery",
+    ];
+    const foundCollections = expectedCollections.filter((name) =>
+      collectionNames.includes(name),
+    );
 
-    // Verificar se PushNotification aparece na navegação
-    const hasPushNotification =
-      navText.toLowerCase().includes("pushnotification") ||
-      navText.toLowerCase().includes("push notification") ||
-      navText.toLowerCase().includes("notifica");
+    // Pelo menos push_subscription deve existir
+    expect(foundCollections).toContain("push_subscription");
 
-    // Screenshot da navegação
+    // Screenshot da navegação para debug
+    await sharedPage.goto("/admin", { waitUntil: "networkidle" });
     await sharedPage.screenshot({
       path: "tests/e2e/screenshots/navigation-with-push.png",
       fullPage: false,
     });
-
-    // Não falhar imediatamente — apenas informar caso não encontre
-    if (!hasPushNotification) {
-      throw new Error(
-        'Coleção "PushNotification" não encontrada na navegação. Verifique permissões.',
-      );
-    }
   });
 
-  test("deve exibir os campos corretos na coleção PushNotification", async () => {
+  test("deve exibir os campos corretos na coleção push_subscription", async () => {
     // Navegar para a coleção
-    await sharedPage.goto("/admin/content/PushNotification", {
+    await sharedPage.goto("/admin/content/push_subscription", {
       waitUntil: "networkidle",
     });
     await sharedPage.waitForTimeout(2000);
@@ -208,7 +212,7 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     // Verificar se há um botão de criar
     const createButton = await sharedPage
       .locator(
-        'a[href*="/PushNotification/+"]:has-text("Create Item"), a.button[href*="/PushNotification/+"]',
+        'a[href*="/push_subscription/+"]:has-text("Create Item"), a.button[href*="/push_subscription/+"]',
       )
       .first();
 
@@ -219,20 +223,20 @@ test.describe("Push Notification Extension - E2E Tests", () => {
 
     if (isCreateVisible) {
       await createButton.click();
-      await sharedPage.waitForURL("**/admin/content/PushNotification/+");
+      await sharedPage.waitForURL("**/admin/content/push_subscription/+");
       await sharedPage.waitForTimeout(2000);
 
       // Tirar screenshot do formulário
       await sharedPage.screenshot({
-        path: "tests/e2e/screenshots/push-notification-form.png",
+        path: "tests/e2e/screenshots/push-subscription-form.png",
         fullPage: true,
       });
 
       // Verificar presença dos campos esperados no formulário
       const pageContent = await sharedPage.content();
 
-      // Campos esperados da collection
-      const expectedFields = ["status", "endpoint", "subscription", "user"];
+      // Campos esperados da collection (nova estrutura)
+      const expectedFields = ["endpoint", "keys", "user", "is_active"];
       const foundFields = expectedFields.filter((field) =>
         pageContent.toLowerCase().includes(field.toLowerCase()),
       );
@@ -258,22 +262,33 @@ test.describe("Push Notification Extension - E2E Tests", () => {
 
     expect(accessToken).toBeTruthy();
 
-    // Verificar se o endpoint /push-notification existe
-    // Fazer uma requisição GET sem dados (esperamos que retorne algo ou erro de método)
+    // Verificar se o endpoint /push-notification/register existe
+    // POST sem dados válidos deve retornar 400 (bad request) ou similar, não 404
     const endpointResponse = await sharedPage
       .context()
-      .request.get("/push-notification", {
+      .request.post("/push-notification/register", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+        data: {},
         failOnStatusCode: false,
       });
 
-    // O endpoint existe se não retornar 404
+    // O endpoint existe se não retornar 404 (esperamos 400 por falta de dados)
     expect(endpointResponse.status()).not.toBe(404);
+
+    // Verificar endpoint do Service Worker
+    const swResponse = await sharedPage
+      .context()
+      .request.get("/push-notification-sw/sw.js", {
+        failOnStatusCode: false,
+      });
+
+    // O endpoint do Service Worker deve retornar 200
+    expect(swResponse.status()).toBe(200);
   });
 
-  test("deve criar um item de PushNotification via API", async () => {
+  test("deve criar um item de push_subscription via API", async () => {
     // Obter access token
     const response = await sharedPage.context().request.post("/auth/login", {
       data: {
@@ -285,23 +300,30 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     const loginData = await response.json();
     const accessToken = loginData.data?.access_token;
 
-    // Criar um item de teste
+    // Buscar o user_id do admin
+    const userResponse = await sharedPage.context().request.get("/users/me", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const userData = await userResponse.json();
+    const userId = userData.data?.id;
+
+    // Criar um item de teste na nova estrutura
     const createResponse = await sharedPage
       .context()
-      .request.post("/items/PushNotification", {
+      .request.post("/items/push_subscription", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
         data: {
-          status: "draft",
-          endpoint: "https://fcm.googleapis.com/fcm/send/test-endpoint",
-          subscription: JSON.stringify({
-            endpoint: "https://fcm.googleapis.com/fcm/send/test-endpoint",
-            keys: {
-              p256dh: "test-p256dh-key",
-              auth: "test-auth-key",
-            },
-          }),
+          user_id: userId,
+          endpoint: `https://fcm.googleapis.com/fcm/send/test-endpoint-${Date.now()}`,
+          keys: {
+            p256dh: "test-p256dh-key",
+            auth: "test-auth-key",
+          },
+          is_active: true,
         },
       });
 
@@ -309,24 +331,22 @@ test.describe("Push Notification Extension - E2E Tests", () => {
 
     const createdItem = await createResponse.json();
     expect(createdItem.data).toBeDefined();
-    expect(createdItem.data.endpoint).toBe(
-      "https://fcm.googleapis.com/fcm/send/test-endpoint",
-    );
+    expect(createdItem.data.endpoint).toContain("fcm.googleapis.com");
 
     // Screenshot após criação
-    await sharedPage.goto("/admin/content/PushNotification", {
+    await sharedPage.goto("/admin/content/push_subscription", {
       waitUntil: "networkidle",
     });
     await sharedPage.waitForTimeout(2000);
     await sharedPage.screenshot({
-      path: "tests/e2e/screenshots/push-notification-with-item.png",
+      path: "tests/e2e/screenshots/push-subscription-with-item.png",
       fullPage: true,
     });
   });
 
   test("deve verificar que o item criado aparece na listagem", async () => {
     // Navegar para a coleção
-    await sharedPage.goto("/admin/content/PushNotification", {
+    await sharedPage.goto("/admin/content/push_subscription", {
       waitUntil: "networkidle",
     });
     await sharedPage.waitForTimeout(2000);
@@ -358,7 +378,7 @@ test.describe("Push Notification Extension - E2E Tests", () => {
 
     // Screenshot final
     await sharedPage.screenshot({
-      path: "tests/e2e/screenshots/push-notification-final.png",
+      path: "tests/e2e/screenshots/push-subscription-final.png",
       fullPage: true,
     });
   });

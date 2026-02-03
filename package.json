@@ -33,6 +33,11 @@
         "source": "src/push-notification/index.ts"
       },
       {
+        "type": "endpoint",
+        "name": "push-notification-sw",
+        "source": "src/push-notification-sw/index.ts"
+      },
+      {
         "type": "hook",
         "name": "db-configuration",
         "source": "src/db-configuration/index.ts"
@@ -41,6 +46,11 @@
         "type": "hook",
         "name": "notification-trigger",
         "source": "src/notification-trigger/index.ts"
+      },
+      {
+        "type": "hook",
+        "name": "push-subscription-frontend",
+        "source": "src/push-subscription-frontend/index.ts"
       }
     ]
   },

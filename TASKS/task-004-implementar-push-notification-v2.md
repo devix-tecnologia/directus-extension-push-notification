@@ -2,9 +2,128 @@
 
 Status: in-progress
 
-**Status:** `todo`  
+**Status:** `in-progress`  
 **Priority:** `high`  
 **Estimate:** `6-8h`
+
+## Progresso da Implementação
+
+### ✅ Backend (Completo)
+
+- [x] Coleção `push_subscription` - Múltiplos dispositivos por usuário
+- [x] Coleção `user_notification` - Mensagens de notificação
+- [x] Coleção `push_delivery` - Tracking de entrega por dispositivo
+- [x] Campo `push_enabled` em `directus_users`
+- [x] Endpoint `/push-notification/register` e `/unregister`
+- [x] Hook `notification-trigger` - Dispara push ao criar notification
+- [x] Hook `db-configuration` - Cria coleções automaticamente
+- [x] Tipos TypeScript em `_types.ts`
+- [x] Funções utilitárias (`cleanPayload`, `isSubscriptionExpired`, etc)
+
+### ✅ Frontend (Novo - Implementado)
+
+- [x] Hook `push-subscription-frontend` - Injeta script via `embed`
+- [x] Endpoint `/push-notification-sw/sw.js` - Serve Service Worker
+- [x] Auto-subscribe quando `push_enabled=true`
+- [x] Solicita permissão de notificação automaticamente
+- [x] Detecta nome do dispositivo (Mac, Windows, Android, iOS)
+
+### ✅ Testes
+
+- [x] Testes E2E - Schema das coleções
+- [x] Testes E2E - Frontend integration (novo)
+- [x] Testes Integração - Push delivery flow
+- [x] Testes Integração - Múltiplos dispositivos
+- [x] Testes Integração - Error handling
+
+## Referências Externas Estudadas
+
+### Firebase Messaging Extension (nerkarso/directus-extensions)
+
+- **Repositório:** https://github.com/nerkarso/directus-extensions/tree/master/operations/firebase-messaging
+- **Tipo:** Operation para Directus Flows
+- **Protocolo:** Firebase Cloud Messaging (FCM)
+
+**Pontos positivos adotados:**
+
+1. ✅ **Dry Run Mode** - Simular envio sem realmente enviar (para testes)
+2. ✅ **Tipos TypeScript bem definidos** - Arquivo `_types.ts` dedicado
+3. ✅ **Limpeza de payload** - `JSON.parse(JSON.stringify(obj))` remove undefined
+4. ✅ **Funções utilitárias** - `isSubscriptionExpired()`, `isRetryableError()`
+5. 🔮 **Tópicos/Broadcast** - Envio em massa (planejado para futuro)
+
+**Diferenças mantidas (nossas vantagens):**
+
+- Self-hosted (sem dependência Google Cloud)
+- Tracking completo com `push_delivery`
+- Retry automático com estados
+- Callback do Service Worker
+
+## Arquitetura Implementada
+
+### Estrutura de Diretórios
+
+```
+src/
+├── db-configuration/          # Hook para criar coleções
+│   └── index.ts
+├── notification-trigger/      # Hook backend - dispara push
+│   ├── index.ts
+│   └── _types.ts
+├── push-notification/         # Endpoint para register/unregister
+│   ├── index.ts
+│   ├── _types.ts
+│   ├── service-worker.ts      # (referência, não usado diretamente)
+│   └── utils.ts
+├── push-notification-sw/      # Endpoint que serve o Service Worker
+│   └── index.ts
+├── push-subscription-frontend/ # Hook que injeta script no frontend
+│   └── index.ts
+└── utils/
+    └── files.ts
+```
+
+### Fluxo de Funcionamento
+
+```mermaid
+sequenceDiagram
+    participant User as Usuário
+    participant Browser as Browser
+    participant Script as Script Injetado
+    participant SW as Service Worker
+    participant API as Directus API
+    participant Hook as notification-trigger
+
+    Note over User,Hook: 1. Carregamento do Frontend
+    User->>Browser: Acessa /admin
+    Browser->>API: GET /admin (HTML)
+    API-->>Browser: HTML + Script injetado via embed
+    Browser->>Script: Executa script
+    Script->>API: GET /users/me (push_enabled)
+    API-->>Script: {push_enabled: true}
+
+    Note over User,Hook: 2. Auto-Subscribe
+    Script->>Browser: Registra Service Worker
+    Browser->>SW: /push-notification-sw/sw.js
+    SW-->>Browser: Service Worker ativo
+    Script->>Browser: Notification.requestPermission()
+    User->>Browser: Concede permissão
+    Browser->>Script: permission = 'granted'
+    Script->>Browser: pushManager.subscribe()
+    Browser-->>Script: PushSubscription
+    Script->>API: POST /push-notification/register
+    API-->>Script: 201 Created
+
+    Note over User,Hook: 3. Envio de Notificação
+    API->>Hook: user_notification.items.create
+    Hook->>API: Busca subscriptions do usuário
+    Hook->>API: Cria push_delivery (status: queued)
+    Hook->>Browser: webpush.sendNotification()
+    SW->>Browser: Exibe notificação
+    SW->>API: PATCH push_delivery (delivered)
+    User->>Browser: Clica na notificação
+    SW->>API: PATCH push_delivery (read)
+```
 
 ## Contexto
 

@@ -23,9 +23,7 @@ class ServiceWorkerLogger implements Logger {
       type: "SW_LOG",
       level,
       message,
-      error: error
-        ? { message: error.message, stack: error.stack }
-        : undefined,
+      error: error ? { message: error.message, stack: error.stack } : undefined,
       timestamp: new Date().toISOString(),
     };
 
