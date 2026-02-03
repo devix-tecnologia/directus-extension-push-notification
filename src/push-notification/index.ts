@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defineEndpoint } from "@directus/extensions-sdk";
 import webPush from "web-push";
+import type {
+  PushSubscriptionData,
+  RegisterSubscriptionRequest,
+} from "./_types.js";
 
 const collection = "push_subscription";
 
@@ -25,8 +29,10 @@ export default defineEndpoint(
         accountability: accountability,
       });
       const user = accountability?.user;
-      const subscription: any = req.body.subscription;
+      const body = req.body as RegisterSubscriptionRequest;
+      const subscription: PushSubscriptionData | undefined = body.subscription;
       const userAgent = req.headers["user-agent"] || "";
+      const deviceName = body.device_name;
 
       if (!(subscription && subscription.endpoint)) {
         logger.info("[Push Notification] Incorrect Subscription payload");
@@ -46,6 +52,7 @@ export default defineEndpoint(
           endpoint: subscription.endpoint,
           keys: subscription.keys,
           user_agent: userAgent,
+          device_name: deviceName,
           is_active: true,
         });
         logger.info(
@@ -73,6 +80,7 @@ export default defineEndpoint(
           user_id: user,
           is_active: true,
           user_agent: userAgent,
+          device_name: deviceName || sub.device_name, // Preserva device_name se não fornecido
         });
         logger.info(
           `[Push Notification] Subscription with endpoint ${subscription.endpoint} and id ${sub.id} has had it user updated`,
@@ -104,7 +112,8 @@ export default defineEndpoint(
         accountability: accountability,
       });
       const user = accountability?.user;
-      const subscription: any = req.body.subscription;
+      const subscription: PushSubscriptionData | undefined =
+        req.body.subscription;
 
       if (!(subscription && subscription.endpoint)) {
         logger.info("[Push Notification] Incorrect Subscription payload");

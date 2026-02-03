@@ -4,6 +4,7 @@ dist
 
 test-results
 playwright-report
+test-user-data-dir
 directus-state.json.backup
 
 # pnpm
