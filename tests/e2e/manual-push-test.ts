@@ -18,7 +18,6 @@ async function main() {
 
   // Capturar logs
   page.on("console", (msg) => {
-    // eslint-disable-next-line no-console
     console.log(`[BROWSER ${msg.type().toUpperCase()}]`, msg.text());
   });
 
@@ -34,18 +33,17 @@ async function main() {
   // Aguardar navegação
   await page.waitForURL("**/admin/content/**", { timeout: 30000 });
 
-  // eslint-disable-next-line no-console
   console.log("\n========================================");
-  // eslint-disable-next-line no-console
+
   console.log("Login realizado! Aguardando você conceder permissão...");
-  // eslint-disable-next-line no-console
+
   console.log("Quando o popup de permissão aparecer, clique em PERMITIR");
-  // eslint-disable-next-line no-console
+
   console.log("========================================\n");
 
   // Aguardar até o usuário pressionar Enter no terminal para fechar o navegador
   // Isso evita que o teste feche automaticamente antes de você interagir
-  // eslint-disable-next-line no-console
+
   console.log(
     "\nPressione ENTER neste terminal quando terminar para fechar o navegador...",
   );
