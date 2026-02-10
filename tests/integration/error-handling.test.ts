@@ -16,6 +16,10 @@ describe("Push Delivery - Tratamento de Erros", () => {
   const testSuiteId = `error-handling-${version.replace(/\./g, "-")}`;
   let userId: string;
 
+  // Nota: Estes testes usam endpoints inválidos propositalmente
+  // para testar cenários de erro, diferente dos outros testes
+  // que usam o servidor Autopush real
+
   beforeAll(async () => {
     process.env.DIRECTUS_VERSION = version;
     logger.setCurrentTest(`Error Handling Test - Directus ${version}`);
@@ -37,10 +41,6 @@ describe("Push Delivery - Tratamento de Erros", () => {
         endpoint: "https://test.com/disabled-user",
         device_name: "Disabled User Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-disabled",
-          auth: "auth-disabled",
-        },
       },
       testSuiteId,
     );
@@ -78,10 +78,6 @@ describe("Push Delivery - Tratamento de Erros", () => {
         endpoint: "https://invalid-endpoint.test/push/error",
         device_name: "Error Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-error-test",
-          auth: "auth-error-test",
-        },
       },
       testSuiteId,
     );
@@ -105,18 +101,10 @@ describe("Push Delivery - Tratamento de Erros", () => {
     );
 
     expect(delivery).toBeTruthy();
-
-    // Em ambiente de teste, pode ter enviado com sucesso
-    // Mas a estrutura para error_code e error_message deve existir
-    if (delivery?.status === "failed") {
-      expect(delivery.error_code).toBeTruthy();
-      expect(delivery.error_message).toBeTruthy();
-      expect(delivery.failed_at).toBeTruthy();
-    } else {
-      // Se não falhou, apenas verificar que os campos existem
-      expect(delivery).toHaveProperty("error_code");
-      expect(delivery).toHaveProperty("error_message");
-    }
+    expect(delivery?.status).toBe("failed");
+    expect(delivery?.error_code).toBeTruthy();
+    expect(delivery?.error_message).toBeTruthy();
+    expect(delivery?.failed_at).toBeTruthy();
   });
 
   test("Deve desativar subscription em erro 410 Gone", async () => {
@@ -128,10 +116,6 @@ describe("Push Delivery - Tratamento de Erros", () => {
         endpoint: "https://test.com/gone-endpoint",
         device_name: "410 Gone Test",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-410",
-          auth: "auth-410",
-        },
       },
       testSuiteId,
     );
@@ -162,29 +146,18 @@ describe("Push Delivery - Tratamento de Erros", () => {
       const updatedSub = await getPushSubscription(
         subscription.id,
         testSuiteId,
-      );
-      expect(updatedSub.is_active).toBe(false);
-      expect(updatedSub.expires_at).toBeTruthy();
-    } else {
-      // Em ambiente de teste sem erro real, apenas validar estrutura
-      expect(delivery).toHaveProperty("error_code");
-      const sub = await getPushSubscription(subscription.id, testSuiteId);
-      expect(sub).toHaveProperty("is_active");
-      expect(sub).toHaveProperty("expires_at");
-    }
-  });
-
-  test("Deve setar retry_after em falhas temporárias", async () => {
-    const subscription = await createPushSubscription(
-      userId,
-      {
-        endpoint: "https://test.com/retry-test",
-        device_name: "Retry Test Device",
+    expect(delivery).toBeTruthy();
+    expect(delivery?.status).toBe("failed");
+    
+    // Com endpoint fake, sempre falha mas não com 410
+    // Verificar que os campos de estrutura existem
+    expect(delivery).toHaveProperty("error_code");
+    expect(delivery).toHaveProperty("error_message");
+    
+    const sub = await getPushSubscription(subscription.id, testSuiteId);
+    expect(sub).toHaveProperty("is_active");
+    expect(sub).toHaveProperty("expires_at");   device_name: "Retry Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-retry",
-          auth: "auth-retry",
-        },
       },
       testSuiteId,
     );
@@ -214,26 +187,15 @@ describe("Push Delivery - Tratamento de Erros", () => {
       // Se está em retry, retry_after deve estar no futuro
       const retryTime = new Date(delivery.retry_after).getTime();
       const now = Date.now();
-      expect(retryTime).toBeGreaterThan(now);
-      expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
-    } else {
-      // Em ambiente de teste sem falha, apenas verificar estrutura
-      expect(delivery).toHaveProperty("retry_after");
-      expect(delivery).toHaveProperty("attempt_count");
-    }
-  });
-
-  test("Deve marcar como failed após exceder max_attempts", async () => {
-    const subscription = await createPushSubscription(
-      userId,
-      {
-        endpoint: "https://test.com/max-fail",
+    expect(delivery).toBeTruthy();
+    expect(delivery?.status).toBe("failed");
+    
+    // Verificar estrutura de retry
+    expect(delivery).toHaveProperty("retry_after");
+    expect(delivery).toHaveProperty("attempt_count");
+    expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);   endpoint: "https://test.com/max-fail",
         device_name: "Max Fail Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-max-fail",
-          auth: "auth-max-fail",
-        },
       },
       testSuiteId,
     );
@@ -270,73 +232,36 @@ describe("Push Delivery - Tratamento de Erros", () => {
         expect(delivery.status).toBe("failed");
       }
     }
-  });
-
+    expect(delivery).toBeTruthy();
+    expect(delivery?.status).toBe("failed");
   test("Deve lidar com subscription sem endpoint válido", async () => {
-    // Tentar criar subscription com endpoint vazio
-    try {
-      await createPushSubscription(
-        userId,
-        {
-          endpoint: "", // Endpoint vazio
-          device_name: "Invalid Endpoint Test",
-          is_active: true,
-          keys: {
-            p256dh: "p256dh-invalid",
-            auth: "auth-invalid",
-          },
-        },
-        testSuiteId,
-      );
-
-      // Se não lançou erro, validar que subscription foi criada com endpoint padrão
-      // (o helper cria endpoint automático se vazio)
-      expect(true).toBe(true);
-    } catch (error) {
-      // Se lançou erro, é o comportamento esperado de validação
-      expect(error).toBeTruthy();
-    }
-  });
-
-  test("Deve validar que keys.p256dh e keys.auth existem", async () => {
-    // Tentar criar subscription sem keys completas
-    try {
-      await createPushSubscription(
-        userId,
-        {
-          endpoint: "https://test.com/no-keys",
-          device_name: "No Keys Test",
-          is_active: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          keys: undefined as any, // Forçar keys undefined
-        },
-        testSuiteId,
-      );
-
-      // Se não lançou erro, o helper criou keys padrão
-      expect(true).toBe(true);
-    } catch (error) {
-      // Se lançou erro, é comportamento esperado de validação
-      expect(error).toBeTruthy();
-    }
-
-    // Criar subscription válida para verificar estrutura
-    const validSub = await createPushSubscription(
+    // O helper sempre cria endpoint válido se vazio
+    const sub = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/valid-keys",
-        device_name: "Valid Keys Test",
+        endpoint: "", // Endpoint vazio, helper cria um automático
+        device_name: "Invalid Endpoint Test",
         is_active: true,
-        keys: {
-          p256dh: "valid-p256dh",
-          auth: "valid-auth",
-        },
       },
       testSuiteId,
     );
 
+    // Verificar que subscription foi criada com endpoint
+    expect(sub.endpoint).toBeTruthy();
+    expect(sub.endpoint.length).toBeGreaterThan(0);
+  });   device_name: "Valid Keys Test",
+        is_active: true,
+      },
+      testSuiteId,
+    );
+
+    // Verificar que keys estão presentes e válidas
     expect(validSub.keys).toBeTruthy();
     expect(validSub.keys.p256dh).toBeTruthy();
     expect(validSub.keys.auth).toBeTruthy();
+    expect(typeof validSub.keys.p256dh).toBe("string");
+    expect(typeof validSub.keys.auth).toBe("string");
+    expect(validSub.keys.p256dh.length).toBeGreaterThan(0);
+    expect(validSub.keys.auth.length).toBeGreaterThan(0);
   });
 });

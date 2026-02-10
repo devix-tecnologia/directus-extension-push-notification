@@ -31,10 +31,6 @@ describe("Push Delivery - Fluxo Completo", () => {
       userId,
       {
         endpoint: "https://test.com/push1",
-        keys: {
-          p256dh: "test-p256dh-1",
-          auth: "test-auth-1",
-        },
       },
       testSuiteId,
     );
@@ -66,10 +62,6 @@ describe("Push Delivery - Fluxo Completo", () => {
       userId,
       {
         endpoint: "https://test.com/push2",
-        keys: {
-          p256dh: "test-p256dh-2",
-          auth: "test-auth-2",
-        },
       },
       testSuiteId,
     );
@@ -110,10 +102,6 @@ describe("Push Delivery - Fluxo Completo", () => {
       userId,
       {
         endpoint: "https://test.com/push3",
-        keys: {
-          p256dh: "test-p256dh-3",
-          auth: "test-auth-3",
-        },
       },
       testSuiteId,
     );
@@ -140,10 +128,6 @@ describe("Push Delivery - Fluxo Completo", () => {
       userId,
       {
         endpoint: "https://test.com/push4",
-        keys: {
-          p256dh: "test-p256dh-4",
-          auth: "test-auth-4",
-        },
       },
       testSuiteId,
     );
@@ -167,6 +151,7 @@ describe("Push Delivery - Fluxo Completo", () => {
     expect(deliveries).toHaveLength(1);
 
     const delivery = deliveries[0];
+    expect(delivery?.status).toBe("sent");
     expect(delivery?.metadata).toBeTruthy();
 
     // metadata deve conter informações da notification
