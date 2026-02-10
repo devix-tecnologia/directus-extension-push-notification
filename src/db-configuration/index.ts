@@ -20,8 +20,11 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
       for (const collection of collections) {
         try {
           await collectionsService.readOne(collection.collection);
-        } catch (e: any) {
-          if (e?.message !== "You don't have permission to access this.")
+        } catch (e: unknown) {
+          if (
+            (e as { message?: string })?.message !==
+            "You don't have permission to access this."
+          )
             throw e;
           await collectionsService.createOne(collection);
         }
@@ -39,8 +42,11 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
       for (const field of fields) {
         try {
           await fieldsService.readOne(field.collection, field.field);
-        } catch (e: any) {
-          if (e?.message !== "You don't have permission to access this.")
+        } catch (e: unknown) {
+          if (
+            (e as { message?: string })?.message !==
+            "You don't have permission to access this."
+          )
             throw e;
           await fieldsService.createField(field.collection, field);
         }
@@ -60,12 +66,13 @@ export default defineHook(({ init }, { services, database, getSchema }) => {
       for (const relation of relations) {
         try {
           await relationsService.createOne(relation);
-        } catch (e: any) {
+        } catch (e: unknown) {
           // Ignora erro se a relação já existe
+          const error = e as { message?: string };
           if (
-            e?.message &&
-            !e.message.includes("already exists") &&
-            !e.message.includes("duplicate")
+            error?.message &&
+            !error.message.includes("already exists") &&
+            !error.message.includes("duplicate")
           ) {
             throw e;
           }
