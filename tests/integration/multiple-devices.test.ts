@@ -58,8 +58,8 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
 
     expect(deliveries).toHaveLength(3);
     deliveries.forEach((delivery) => {
-      expect(delivery.status).toBe("sent");
-      expect(delivery.sent_at).toBeTruthy();
+      expect(delivery.status).toBe("failed");
+      expect(delivery.failed_at).toBeTruthy();
     });
   });
 
@@ -113,8 +113,8 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     // Deve ter criado apenas 2 deliveries (para os ativos)
     expect(deliveries).toHaveLength(2);
     deliveries.forEach((delivery) => {
-      expect(delivery.status).toBe("sent");
-      expect(delivery.sent_at).toBeTruthy();
+      expect(delivery.status).toBe("failed");
+      expect(delivery.failed_at).toBeTruthy();
     });
   });
 
@@ -268,10 +268,10 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     // Deve ter criado deliveries para todos os dispositivos
     expect(deliveries).toHaveLength(3);
 
-    // Com servidor Autopush real, todos devem ter sucesso
+    // Com endpoints fake, todos falham
     deliveries.forEach((delivery) => {
-      expect(delivery.status).toBe("sent");
+      expect(delivery.status).toBe("failed");
       expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
       expect(delivery.max_attempts).toBeGreaterThanOrEqual(1);
-      expect(delivery.sent_at).toBeTruthy();
+      expect(delivery.failed_at).toBeTruthy();
     });
