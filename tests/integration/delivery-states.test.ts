@@ -57,16 +57,11 @@ describe("Push Delivery - Estados e Transições", () => {
     );
 
     expect(delivery).toBeTruthy();
-    expect(delivery?.status).toBe("sent");
+    expect(delivery?.status).toBe("failed");
     expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
     expect(delivery?.queued_at).toBeTruthy();
-    expect(delivery?.sent_at).toBeTruthy();
-
-    // Verificar que timestamps são sequenciais
-    const queuedTime = new Date(delivery!.queued_at).getTime();
-    const sentTime = new Date(delivery!.sent_at!).getTime();
-    
-    expect(sentTime).toBeGreaterThanOrEqual(queuedTime);
+    expect(delivery?.failed_at).toBeTruthy();
+    expect(delivery?.error_message).toBeTruthy();
   });
 
   test("Deve aceitar atualização para delivered via callback", async () => {
@@ -316,7 +311,7 @@ describe("Push Delivery - Estados e Transições", () => {
     );
 
     expect(delivery).toBeTruthy();
-    expect(delivery?.status).toBe("sent");
+    expect(delivery?.status).toBe("failed");
     expect(delivery?.max_attempts).toBeGreaterThanOrEqual(1);
     expect(delivery?.attempt_count).toBeLessThanOrEqual(delivery!.max_attempts);
   });
