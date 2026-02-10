@@ -33,10 +33,6 @@ describe("Push Delivery - Estados e Transições", () => {
         endpoint: "https://test.com/state-test-1",
         device_name: "State Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-state-1",
-          auth: "auth-state-1",
-        },
       },
       testSuiteId,
     );
@@ -62,16 +58,15 @@ describe("Push Delivery - Estados e Transições", () => {
 
     expect(delivery).toBeTruthy();
     expect(delivery?.status).toBe("sent");
-    expect(delivery?.sent_at).toBeTruthy();
     expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
     expect(delivery?.queued_at).toBeTruthy();
+    expect(delivery?.sent_at).toBeTruthy();
 
-    // Verificar que sent_at é posterior ao queued_at
-    if (delivery?.queued_at && delivery?.sent_at) {
-      expect(new Date(delivery.sent_at).getTime()).toBeGreaterThanOrEqual(
-        new Date(delivery.queued_at).getTime(),
-      );
-    }
+    // Verificar que timestamps são sequenciais
+    const queuedTime = new Date(delivery!.queued_at).getTime();
+    const sentTime = new Date(delivery!.sent_at!).getTime();
+    
+    expect(sentTime).toBeGreaterThanOrEqual(queuedTime);
   });
 
   test("Deve aceitar atualização para delivered via callback", async () => {
@@ -81,10 +76,6 @@ describe("Push Delivery - Estados e Transições", () => {
         endpoint: "https://test.com/delivered-test",
         device_name: "Delivered Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-delivered",
-          auth: "auth-delivered",
-        },
       },
       testSuiteId,
     );
@@ -110,20 +101,18 @@ describe("Push Delivery - Estados e Transições", () => {
     expect(delivery).toBeTruthy();
     expect(delivery?.status).toBe("sent");
 
-    // Simular callback do Service Worker
-    if (delivery) {
-      const updated = await updatePushDelivery(
-        delivery.id,
-        {
-          status: "delivered",
-          delivered_at: new Date().toISOString(),
-        },
-        testSuiteId,
-      );
+    // Simular callback do Service Worker atualizando para delivered
+    const updated = await updatePushDelivery(
+      delivery!.id,
+      {
+        status: "delivered",
+        delivered_at: new Date().toISOString(),
+      },
+      testSuiteId,
+    );
 
-      expect(updated.status).toBe("delivered");
-      expect(updated.delivered_at).toBeTruthy();
-    }
+    expect(updated.status).toBe("delivered");
+    expect(updated.delivered_at).toBeTruthy();
   });
 
   test("Deve aceitar atualização para read quando usuário clica", async () => {
@@ -133,10 +122,6 @@ describe("Push Delivery - Estados e Transições", () => {
         endpoint: "https://test.com/read-test",
         device_name: "Read Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-read",
-          auth: "auth-read",
-        },
       },
       testSuiteId,
     );
@@ -196,10 +181,6 @@ describe("Push Delivery - Estados e Transições", () => {
         endpoint: "https://test.com/timestamps-test",
         device_name: "Timestamps Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-timestamps",
-          auth: "auth-timestamps",
-        },
       },
       testSuiteId,
     );
@@ -278,10 +259,6 @@ describe("Push Delivery - Estados e Transições", () => {
         endpoint: "https://test.com/attempts-test",
         device_name: "Attempts Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-attempts",
-          auth: "auth-attempts",
-        },
       },
       testSuiteId,
     );
@@ -305,13 +282,8 @@ describe("Push Delivery - Estados e Transições", () => {
     );
 
     expect(delivery).toBeTruthy();
+    expect(delivery?.status).toBe("failed");
     expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
-
-    // Em ambiente de teste, deve ter tentado pelo menos uma vez
-    // Em caso de falha e retry, attempt_count seria > 1
-    if (delivery?.status === "failed") {
-      expect(delivery.attempt_count).toBeGreaterThan(0);
-    }
   });
 
   test("Deve respeitar max_attempts configurado", async () => {
@@ -321,10 +293,6 @@ describe("Push Delivery - Estados e Transições", () => {
         endpoint: "https://test.com/max-attempts-test",
         device_name: "Max Attempts Test Device",
         is_active: true,
-        keys: {
-          p256dh: "p256dh-max-attempts",
-          auth: "auth-max-attempts",
-        },
       },
       testSuiteId,
     );
@@ -348,15 +316,8 @@ describe("Push Delivery - Estados e Transições", () => {
     );
 
     expect(delivery).toBeTruthy();
+    expect(delivery?.status).toBe("sent");
     expect(delivery?.max_attempts).toBeGreaterThanOrEqual(1);
-    expect(delivery?.attempt_count).toBeLessThanOrEqual(
-      delivery?.max_attempts ?? 3,
-    );
-
-    // Verificar que o sistema respeita o limite
-    // Se status for failed e attempt_count == max_attempts, não deve tentar mais
-    if (delivery?.status === "failed") {
-      expect(delivery.attempt_count).toBeLessThanOrEqual(delivery.max_attempts);
-    }
+    expect(delivery?.attempt_count).toBeLessThanOrEqual(delivery!.max_attempts);
   });
 });

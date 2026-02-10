@@ -1,5 +1,14 @@
 import { dockerHttpRequest } from "../../setup.js";
 
+/**
+ * Chaves ECDH P-256 válidas geradas com crypto.createECDH('prime256v1')
+ * p256dh: 87 chars base64url (65 bytes), auth: 22 chars base64url (16 bytes)
+ */
+export const VALID_TEST_KEYS = {
+  p256dh: "BCXZvHuwJej4huSYgvSx1F2S3DNCAeGHkByzT9qI4IqZ2zDj6wh-DZCia2SmyqgZPB7QgJ3rmAjjqKAR721doLo",
+  auth: "HfueLUKHqJ1L7hpL6itXSw",
+};
+
 export interface PushSubscription {
   id: string;
   user_id: string;
@@ -70,11 +79,7 @@ export async function createPushSubscription(
       endpoint:
         options.endpoint ||
         `https://fcm.googleapis.com/fcm/send/test-${Date.now()}`,
-      keys: options.keys || {
-        p256dh:
-          "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUK8S5ldX7VYiTsWjyHxWyEVX_PMNpG7-vFQOUG8",
-        auth: "iQh8SfVxcq0Meu_9MNaLhg",
-      },
+      keys: options.keys || VALID_TEST_KEYS,
       user_agent: options.user_agent || "Test User Agent",
       device_name: options.device_name || null,
       is_active: options.is_active !== undefined ? options.is_active : true,

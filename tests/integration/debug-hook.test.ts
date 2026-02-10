@@ -52,10 +52,6 @@ describe("Debug - Testar Hook", () => {
       userId,
       {
         endpoint: "https://test.com/debug-push",
-        keys: {
-          p256dh: "debug-p256dh",
-          auth: "debug-auth",
-        },
       },
       testSuiteId,
     );
