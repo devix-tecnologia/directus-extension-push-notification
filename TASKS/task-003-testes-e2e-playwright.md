@@ -38,7 +38,7 @@ Implementar testes end-to-end com Playwright para validar a interface e funciona
 
 ## References
 
-- Ver implementação similar em: `/Users/sidarta/repositorios/directus-extension-inframe/tests/e2e/directus-login-collections.spec.ts`
+- Ver implementação similar em: `directus-extension-inframe/tests/e2e/directus-login-collections.spec.ts`
 - Playwright config: `playwright.config.cjs`
 - Docker test environment já configurado
 

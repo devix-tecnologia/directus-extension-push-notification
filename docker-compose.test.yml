@@ -5,10 +5,12 @@ services:
     environment:
       DB_CLIENT: "sqlite3"
       DB_FILENAME: "/tmp/data/directus.db"
-      KEY: "test-key"
-      SECRET: "test-secret-abcdef1234567890abcdef1234567890"
+      # ⚠️ TEST ENVIRONMENT ONLY - Deterministic keys for CI/CD reproducibility
+      # These credentials are ONLY for automated testing, NOT for production use
+      KEY: "test-key-for-ci-only"
+      SECRET: "test-secret-for-ci-only-abcdef1234567890abcdef1234567890"
       ADMIN_EMAIL: "admin@example.com"
-      ADMIN_PASSWORD: "admin123"
+      ADMIN_PASSWORD: "test-password-ci-only"
       PUBLIC_URL: "https://directus:8055"
       STORAGE_LOCAL_ROOT: "/directus/uploads"
       EXTENSIONS_PATH: "./extensions"
@@ -17,11 +19,11 @@ services:
       CACHE_ENABLED: "false"
       ACCEPT_TERMS: "true"
       PROJECT_OWNER: "admin@example.com"
-      VAPID_PUBLIC_KEY: "BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o"
-      VAPID_PRIVATE_KEY: "xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk"
 
-      # CSP para permitir scripts inline (necessário para o hook embed)
-      CONTENT_SECURITY_POLICY_DIRECTIVES__SCRIPT_SRC: "'self' 'unsafe-eval' 'unsafe-inline'"
+      # ⚠️ TEST VAPID KEYS - DO NOT USE IN REAL ENVIRONMENTS
+      # These keys are for automated testing only
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk}"
 
       # Melhorar performance de inicialização
       LOG_LEVEL: "warn"

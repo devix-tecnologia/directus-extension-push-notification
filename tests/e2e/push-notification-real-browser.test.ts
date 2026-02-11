@@ -35,19 +35,13 @@ test.describe("Push Notification E2E Real no Browser", () => {
     await page.waitForURL(/\/admin\/content/, { timeout: 15000 });
     console.log("✅ Login realizado");
 
-    // 3. Obter token de autenticação
-    const authToken = await page.evaluate(() => {
-      const authData = localStorage.getItem("auth");
-      if (authData) {
-        const parsed = JSON.parse(authData);
-        return parsed.access_token || parsed.token;
-      }
+    // 3. Obter token de autenticação do cookie
+    const cookies = await context.cookies();
+    const authCookie = cookies.find((c) => c.name === "directus_session_token");
 
-      return null;
-    });
-
-    expect(authToken).toBeTruthy();
-    console.log("✅ Token obtido");
+    expect(authCookie).toBeTruthy();
+    const authToken = authCookie!.value;
+    console.log("✅ Token obtido do cookie");
 
     // 4. Habilitar push via API
     const enablePushResponse = await page.request.patch(

@@ -7,11 +7,16 @@ services:
       DB_CLIENT: "sqlite3"
       DB_FILENAME: "/tmp/data/directus.db"
 
-      KEY: "dev-key"
-      SECRET: "dev-secret-abcdef1234567890abcdef1234567890"
+      # ⚠️⚠️⚠️ DEVELOPMENT ONLY - DO NOT USE IN PRODUCTION ⚠️⚠️⚠️
+      # These credentials are intentionally simple for local development.
+      # In production, ALWAYS generate secure random values:
+      #   KEY: openssl rand -hex 16
+      #   SECRET: openssl rand -base64 32
+      KEY: "${DIRECTUS_KEY:-dev-key}"
+      SECRET: "${DIRECTUS_SECRET:-dev-secret-abcdef1234567890abcdef1234567890}"
 
-      ADMIN_EMAIL: "admin@example.com"
-      ADMIN_PASSWORD: "admin123"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-admin123}"
 
       PUBLIC_URL: "http://localhost:8055"
 
@@ -25,12 +30,17 @@ services:
       ACCEPT_TERMS: "true"
       PROJECT_OWNER: "admin@example.com"
 
-      # Chaves VAPID para desenvolvimento
-      VAPID_PUBLIC_KEY: "BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o"
-      VAPID_PRIVATE_KEY: "xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk"
+      # ⚠️⚠️⚠️ NEVER REUSE THESE EXAMPLE VAPID KEYS IN PRODUCTION ⚠️⚠️⚠️
+      # These keys are PUBLIC and shared in documentation.
+      # Using them in production means ANYONE can send fake notifications to your users!
+      # Generate your own unique keys: npx web-push generate-vapid-keys
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk}"
 
-      # CSP para permitir scripts inline (necessário para o hook embed)
-      CONTENT_SECURITY_POLICY_DIRECTIVES__SCRIPT_SRC: "'self' 'unsafe-eval' 'unsafe-inline'"
+      # VAPID Subject (opcional) - identificação do servidor de push
+      # Em produção, use: VAPID_SUBJECT: "https://seusite.com" ou "mailto:contato@seusite.com"
+      # Se não definido, usa PUBLIC_URL (se for https://) ou fallback para mailto:
+      # VAPID_SUBJECT: "mailto:admin@example.com"
 
     ports:
       - 8055:8055
