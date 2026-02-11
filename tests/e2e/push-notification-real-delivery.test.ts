@@ -143,6 +143,28 @@ async function deactivateSubscription(
   });
 }
 
+// Helper para limpar todas as subscriptions ativas
+async function cleanupSubscriptions(
+  context: BrowserContext,
+  accessToken: string,
+): Promise<void> {
+  // Buscar todas as subscriptions ativas
+  const subsResponse = await context.request.get("/items/push_subscription?filter[is_active][_eq]=true", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  
+  const subsData = await subsResponse.json();
+  console.log(`🔍 Encontradas ${subsData.data.length} subscriptions ativas para limpeza`);
+  
+  // Desativar todas as subscriptions ativas
+  for (const sub of subsData.data) {
+    await deactivateSubscription(context, accessToken, sub.id);
+    console.log(`🧹 Subscription desativada: ${sub.id}`);
+  }
+}
+
 // Helper para criar uma notificação
 async function createNotification(
   context: BrowserContext,
@@ -205,6 +227,18 @@ async function waitForDelivery(
 }
 
 test.describe.serial("Push Notification - Real Delivery Test", () => {
+  test.beforeEach(async ({ browser }) => {
+    const context = await browser.newContext({ baseURL: BASE_URL });
+    try {
+      const auth = await authenticate(context);
+      
+      // Limpar subscriptions ativas antes de cada teste
+      await cleanupSubscriptions(context, auth.accessToken);
+    } finally {
+      await context.close();
+    }
+  });
+
   test("deve criar notification e gerar delivery record", async ({
     browser,
   }) => {
@@ -219,7 +253,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
         auth.accessToken,
       ).then((sub) => {
         console.log(`📱 Subscription criada: ${sub.id}`);
-        sub.id = sub.id.toString();        
+        sub.id = sub.id.toString();
         return sub;
       });
 
