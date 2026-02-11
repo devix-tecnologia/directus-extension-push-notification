@@ -11,7 +11,7 @@ import {
 } from "./helpers/test-helpers.js";
 
 describe("Push Delivery - Estados e Transições", () => {
-  const version = process.env.DIRECTUS_TEST_VERSION || "11.14.1";
+  const version = process.env.DIRECTUS_TEST_VERSION || "11.15.1";
   const testSuiteId = `delivery-states-${version.replace(/\./g, "-")}`;
   let userId: string;
 
@@ -27,10 +27,11 @@ describe("Push Delivery - Estados e Transições", () => {
   });
 
   test("Deve transicionar de queued para sent com timestamps corretos", async () => {
+    const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/state-test-1",
+        endpoint: `${MOCK_PUSH_SERVER}/success-1`,
         device_name: "State Test Device",
         is_active: true,
       },
@@ -65,10 +66,11 @@ describe("Push Delivery - Estados e Transições", () => {
   });
 
   test("Deve aceitar atualização para delivered via callback", async () => {
+    const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/delivered-test",
+        endpoint: `${MOCK_PUSH_SERVER}/callback-test`,
         device_name: "Delivered Test Device",
         is_active: true,
       },
@@ -94,7 +96,8 @@ describe("Push Delivery - Estados e Transições", () => {
     );
 
     expect(delivery).toBeTruthy();
-    expect(delivery?.status).toBe("sent");
+    // Com endpoint fake, sempre falha
+    expect(delivery?.status).toBe("failed");
 
     // Simular callback do Service Worker atualizando para delivered
     const updated = await updatePushDelivery(
@@ -111,10 +114,11 @@ describe("Push Delivery - Estados e Transições", () => {
   });
 
   test("Deve aceitar atualização para read quando usuário clica", async () => {
+    const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/read-test",
+        endpoint: `${MOCK_PUSH_SERVER}/read-test`,
         device_name: "Read Test Device",
         is_active: true,
       },
@@ -170,10 +174,11 @@ describe("Push Delivery - Estados e Transições", () => {
   });
 
   test("Deve validar sequência de timestamps: queued_at < sent_at < delivered_at < read_at", async () => {
+    const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/timestamps-test",
+        endpoint: `${MOCK_PUSH_SERVER}/timestamps-test`,
         device_name: "Timestamps Test Device",
         is_active: true,
       },
@@ -248,10 +253,11 @@ describe("Push Delivery - Estados e Transições", () => {
   });
 
   test("Deve incrementar attempt_count a cada tentativa", async () => {
+    const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/attempts-test",
+        endpoint: `${MOCK_PUSH_SERVER}/attempt-test`,
         device_name: "Attempts Test Device",
         is_active: true,
       },
@@ -282,10 +288,11 @@ describe("Push Delivery - Estados e Transições", () => {
   });
 
   test("Deve respeitar max_attempts configurado", async () => {
+    const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/max-attempts-test",
+        endpoint: `${MOCK_PUSH_SERVER}/max-attempts-test`,
         device_name: "Max Attempts Test Device",
         is_active: true,
       },

@@ -1,12 +1,30 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { defineHook } from "@directus/extensions-sdk";
 import webpush from "web-push";
 
-export default defineHook(({ filter, action }, { services }) => {
+interface PushSubscription {
+  id: string | number;
+  endpoint: string;
+  keys: string | { p256dh: string; auth: string };
+  user_agent?: string;
+  device_name?: string;
+  is_active: boolean;
+}
+
+interface DeliveryRecord {
+  id: string | number;
+  attempt_count: number;
+  max_attempts: number;
+  subscription: PushSubscription;
+}
+
+export default defineHook(({ filter, action }, { services, logger }) => {
   const { ItemsService } = services;
 
   filter("user_notification.items.create", async (payload) => {
-    console.log("🔔 [FILTER] user_notification.items.create", { payload });
+    logger.debug(
+      "[Notification Trigger] Filter user_notification.items.create",
+      { payload },
+    );
     return payload;
   });
 
@@ -16,20 +34,27 @@ export default defineHook(({ filter, action }, { services }) => {
       return;
     }
 
-    console.log("🔔 [HOOK] items.create triggered for user_notification", {
-      key: meta.key,
-      payload: meta.payload,
-    });
+    logger.info(
+      "[Notification Trigger] Processing items.create for user_notification",
+      {
+        key: meta.key,
+        payload: meta.payload,
+      },
+    );
 
     const notification = { ...meta.payload, id: meta.key };
 
     // Apenas processar se channel === 'push'
     if (notification.channel !== "push") {
-      console.log(`user_notification ${notification.id} não é push, ignorando`);
+      logger.debug(
+        `[Notification Trigger] Notification ${notification.id} is not push channel, skipping`,
+      );
       return;
     }
 
-    console.log("✅ [HOOK] Channel is push, continuing...");
+    logger.debug(
+      "[Notification Trigger] Channel is push, processing notification",
+    );
 
     // Configurar VAPID keys (precisa ser feito aqui pois env não está disponível no escopo externo)
     const env = process.env;
@@ -57,18 +82,22 @@ export default defineHook(({ filter, action }, { services }) => {
       const user = await usersService.readOne(notification.user_id, {
         fields: ["id", "push_enabled"],
       });
-      console.log("👤 [HOOK] User loaded:", {
+
+      logger.debug("[Notification Trigger] User loaded", {
         id: user.id,
         push_enabled: user.push_enabled,
-        type: typeof user.push_enabled,
       });
 
       if (!user.push_enabled) {
-        console.log(`Usuário ${user.id} não tem push habilitado`);
+        logger.warn(
+          `[Notification Trigger] User ${user.id} does not have push notifications enabled`,
+        );
         return;
       }
 
-      console.log("✅ [HOOK] User has push enabled, continuing...");
+      logger.debug(
+        "[Notification Trigger] User has push enabled, fetching subscriptions",
+      );
 
       // Buscar TODAS as subscriptions ATIVAS do usuário (múltiplos dispositivos)
       const subscriptions = await subscriptionsService.readByQuery({
@@ -78,24 +107,30 @@ export default defineHook(({ filter, action }, { services }) => {
         },
         limit: -1,
       });
-      console.log(
-        `📱 [HOOK] Found ${subscriptions.length} active subscriptions`,
+
+      logger.info(
+        `[Notification Trigger] Found ${subscriptions.length} active subscription(s) for user ${user.id}`,
       );
 
       if (subscriptions.length === 0) {
-        console.log(`Usuário ${user.id} não possui subscriptions ativas`);
+        logger.warn(
+          `[Notification Trigger] User ${user.id} has no active subscriptions`,
+        );
         return;
       }
 
-      console.log("✅ [HOOK] Has active subscriptions, creating deliveries...");
+      logger.debug(
+        "[Notification Trigger] Creating delivery records for each subscription",
+      );
 
       // Criar registros na push_delivery para cada dispositivo (status: queued)
-      const deliveryRecords: Array<any> = [];
+      const deliveryRecords: DeliveryRecord[] = [];
 
       for (const sub of subscriptions) {
-        console.log(
-          `📦 [HOOK] Creating delivery for subscription ${sub.id}...`,
+        logger.debug(
+          `[Notification Trigger] Creating delivery record for subscription ${sub.id}`,
         );
+
         const deliveryRecord = await deliveryService.createOne({
           user_notification_id: notification.id,
           push_subscription_id: sub.id,
@@ -104,11 +139,16 @@ export default defineHook(({ filter, action }, { services }) => {
           attempt_count: 0,
           max_attempts: 3,
         });
-        console.log(`✅ [HOOK] Delivery created: ${deliveryRecord}`);
+
+        logger.debug(
+          `[Notification Trigger] Delivery record created with id ${deliveryRecord}`,
+        );
+
         deliveryRecords.push({
           id: deliveryRecord,
           attempt_count: 0,
-          subscription: sub,
+          max_attempts: 3,
+          subscription: sub as PushSubscription,
         });
       }
 
@@ -130,8 +170,9 @@ export default defineHook(({ filter, action }, { services }) => {
           // Se keys vier como string, fazer parse
           const keys =
             typeof sub.keys === "string" ? JSON.parse(sub.keys) : sub.keys;
+
           const subscription = {
-            endpoint: sub.endpoint,
+            endpoint: sub.endpoint as string,
             keys: keys,
           };
 
@@ -160,40 +201,47 @@ export default defineHook(({ filter, action }, { services }) => {
             last_used_at: new Date().toISOString(),
           });
 
-          console.log(
-            `✓ Push enviado para dispositivo ${sub.id} (${sub.device_name || sub.user_agent})`,
+          logger.info(
+            `[Notification Trigger] Push notification sent successfully to device ${sub.id} (${sub.device_name || sub.user_agent})`,
           );
-        } catch (error: any) {
+        } catch (error: unknown) {
           failedCount++;
-          console.error(
-            `Erro ao enviar push para dispositivo ${sub.id}:`,
-            error,
+
+          const err = error as { message?: string; statusCode?: number };
+
+          logger.error(
+            `[Notification Trigger] Failed to send push to device ${sub.id}`,
+            {
+              error: err.message,
+              statusCode: err.statusCode,
+            },
           );
 
           const shouldRetry =
             delivery.attempt_count < delivery.max_attempts &&
-            error.statusCode !== 410;
+            err.statusCode !== 410;
 
           // Atualizar status para 'failed'
           await deliveryService.updateOne(delivery.id, {
             status: shouldRetry ? "queued" : "failed",
             failed_at: shouldRetry ? null : new Date().toISOString(),
-            error_code: String(error.statusCode || "UNKNOWN"),
-            error_message: error.message,
+            error_code: String(err.statusCode || "UNKNOWN"),
+            error_message: err.message,
             retry_after: shouldRetry
               ? new Date(Date.now() + 60000).toISOString()
               : null, // 1min
             metadata: {
               device: sub.device_name || sub.user_agent,
-              endpoint_domain: new URL(sub.endpoint).hostname,
+              endpoint_domain: new URL(sub.endpoint as string).hostname,
             },
           });
 
           // Se subscription expirou (410 Gone), marcar como inativa
-          if (error.statusCode === 410) {
-            console.log(
-              `Subscription ${sub.id} expirada, marcando como inativa`,
+          if (err.statusCode === 410) {
+            logger.warn(
+              `[Notification Trigger] Subscription ${sub.id} expired (410 Gone), marking as inactive`,
             );
+
             await subscriptionsService.updateOne(sub.id, {
               is_active: false,
               expires_at: new Date().toISOString(),
@@ -202,11 +250,19 @@ export default defineHook(({ filter, action }, { services }) => {
         }
       }
 
-      console.log(
-        `✓ Push notification: ${sentCount}/${subscriptions.length} dispositivos alcançados`,
+      logger.info(
+        `[Notification Trigger] Push notification completed: ${sentCount}/${subscriptions.length} device(s) reached, ${failedCount} failed`,
       );
-    } catch (error: any) {
-      console.error("Erro ao enviar push:", error);
+    } catch (error: unknown) {
+      const err = error as { message?: string; stack?: string };
+
+      logger.error(
+        "[Notification Trigger] Error processing push notification",
+        {
+          error: err.message,
+          stack: err.stack,
+        },
+      );
     }
   });
 });

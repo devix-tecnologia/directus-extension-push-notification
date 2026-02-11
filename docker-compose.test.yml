@@ -1,12 +1,12 @@
 services:
   directus:
-    image: directus/directus:${DIRECTUS_VERSION:-11.14.1}
+    image: directus/directus:${DIRECTUS_VERSION:-11.15.1}
     container_name: directus-push-notification-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
     environment:
       DB_CLIENT: "sqlite3"
       DB_FILENAME: "/tmp/data/directus.db"
       KEY: "test-key"
-      SECRET: "test-secret"
+      SECRET: "test-secret-abcdef1234567890abcdef1234567890"
       ADMIN_EMAIL: "admin@example.com"
       ADMIN_PASSWORD: "admin123"
       PUBLIC_URL: "https://directus:8055"
@@ -19,11 +19,20 @@ services:
       PROJECT_OWNER: "admin@example.com"
       VAPID_PUBLIC_KEY: "BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o"
       VAPID_PRIVATE_KEY: "xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk"
+
+      # CSP para permitir scripts inline (necessário para o hook embed)
+      CONTENT_SECURITY_POLICY_DIRECTIVES__SCRIPT_SRC: "'self' 'unsafe-eval' 'unsafe-inline'"
+
+      # Melhorar performance de inicialização
+      LOG_LEVEL: "warn"
+      DB_POOL_MIN: "0"
+      DB_POOL_MAX: "5"
     volumes:
       - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
       - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
       - ./package.json:/directus/extensions/directus-extension-push-notification/package.json:ro
       - ./dist/directus-state.json:/directus/extensions/directus-extension-push-notification/dist/directus-state.json:ro
+      - ./dist/service-worker.js:/directus/extensions/directus-extension-push-notification/dist/service-worker.js:ro
     tmpfs:
       - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777
       - /tmp/data:rw,size=64M,mode=777
@@ -39,10 +48,10 @@ services:
           "--spider",
           "http://0.0.0.0:8055/server/health",
         ]
-      interval: 3s
-      timeout: 3s
-      retries: 120
-      start_period: 60s
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
 
   tests:
     image: mcr.microsoft.com/playwright:v1.57.0
@@ -63,7 +72,7 @@ services:
       - bash
       - -lc
       - |
-        npm i -g pnpm@10.20.0 && \
+        npm i -g pnpm@10.29.2 && \
         pnpm install --frozen-lockfile && \
         pnpm exec playwright install --with-deps && \
         pnpm test:e2e

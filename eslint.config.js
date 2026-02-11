@@ -19,7 +19,14 @@ export default [
 
   // Ignored files
   {
-    ignores: ["**/dist/", "node_modules/", ".pnpm-store/"],
+    ignores: [
+      "**/dist/",
+      "node_modules/",
+      ".pnpm-store/",
+      "playwright-report/",
+      "test-results/",
+      "test-user-data-dir/",
+    ],
   },
 
   // Enable recommended rules for JS files
@@ -82,6 +89,14 @@ export default [
           varsIgnorePattern: "^_",
         },
       ],
+    },
+  },
+
+  // Test files configuration
+  {
+    files: ["tests/**/*.ts", "tests/**/*.js", "**/*.test.ts", "**/*.spec.ts"],
+    rules: {
+      "no-console": "off", // Allow console in test files
     },
   },
 

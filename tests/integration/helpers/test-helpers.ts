@@ -4,8 +4,14 @@ import { dockerHttpRequest } from "../../setup.js";
  * Chaves ECDH P-256 válidas geradas com crypto.createECDH('prime256v1')
  * p256dh: 87 chars base64url (65 bytes), auth: 22 chars base64url (16 bytes)
  */
+/**
+ * Endpoint base do mock push server no Directus
+ */
+export const MOCK_PUSH_SERVER = "http://directus:8055/mock-push-server";
+
 export const VALID_TEST_KEYS = {
-  p256dh: "BCXZvHuwJej4huSYgvSx1F2S3DNCAeGHkByzT9qI4IqZ2zDj6wh-DZCia2SmyqgZPB7QgJ3rmAjjqKAR721doLo",
+  p256dh:
+    "BCXZvHuwJej4huSYgvSx1F2S3DNCAeGHkByzT9qI4IqZ2zDj6wh-DZCia2SmyqgZPB7QgJ3rmAjjqKAR721doLo",
   auth: "HfueLUKHqJ1L7hpL6itXSw",
 };
 

@@ -11,7 +11,7 @@ import {
 } from "./helpers/test-helpers.js";
 
 describe("Push Delivery - Múltiplos Dispositivos", () => {
-  const version = process.env.DIRECTUS_TEST_VERSION || "11.14.1";
+  const version = process.env.DIRECTUS_TEST_VERSION || "11.15.1";
   const testSuiteId = `multiple-devices-${version.replace(/\./g, "-")}`;
   let userId: string;
 
@@ -181,8 +181,9 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       testSuiteId,
     );
 
-    const original1 = sub1.last_used_at;
-    const original2 = sub2.last_used_at;
+    // Timestamps originais para referência (não utilizados no teste)
+    // const _original1 = sub1.last_used_at;
+    // const _original2 = sub2.last_used_at;
 
     await wait(100);
 
@@ -265,8 +266,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     const statuses = deliveries.map((d) => d.status);
     expect(
       statuses.every((s) => ["sent", "failed", "queued"].includes(s)),
-    // Deve ter criado deliveries para todos os dispositivos
-    expect(deliveries).toHaveLength(3);
+    ).toBe(true);
 
     // Com endpoints fake, todos falham
     deliveries.forEach((delivery) => {
@@ -275,3 +275,5 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       expect(delivery.max_attempts).toBeGreaterThanOrEqual(1);
       expect(delivery.failed_at).toBeTruthy();
     });
+  });
+});

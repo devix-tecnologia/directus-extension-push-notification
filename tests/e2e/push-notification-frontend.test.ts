@@ -47,7 +47,7 @@ test.describe("Push Notification - Frontend Integration", () => {
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data.status).toBe("ok");
-    expect(data.service).toBe("push-notification");
+    expect(data.service).toBe("push-notification-sw");
   });
 
   test("deve injetar script de push notification no HTML do Directus", async ({

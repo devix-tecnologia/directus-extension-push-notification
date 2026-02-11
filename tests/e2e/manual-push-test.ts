@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * Script para abrir navegador normal (não incognito) para testar push notification
  */

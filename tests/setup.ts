@@ -43,7 +43,7 @@ export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
     logger.info("Starting Docker Compose...");
     const composeCmd = await getDockerComposeCommand();
     const { stdout, stderr } = await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.14.1"} ${composeCmd} -f docker-compose.test.yml up -d directus`,
+      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.15.1"} ${composeCmd} -f docker-compose.test.yml up -d directus`,
     );
 
     if (stderr) logger.warn(`Docker Compose stderr: ${stderr}`);
@@ -161,7 +161,7 @@ async function waitForDirectus(
     } catch (error) {
       if (i === retries - 1) {
         logger.error("Failed to connect to Directus", error);
-        throw new Error("Directus failed to start");
+        throw new Error("Directus failed to start", { cause: error });
       }
 
       await new Promise((resolve) => setTimeout(resolve, delay));

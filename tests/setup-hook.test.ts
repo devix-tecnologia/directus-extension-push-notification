@@ -7,7 +7,7 @@ import {
 import { logger } from "./test-logger.js";
 
 describe("Push Notification Extension - Setup Hook", () => {
-  const version = process.env.DIRECTUS_TEST_VERSION || "11.14.1";
+  const version = process.env.DIRECTUS_TEST_VERSION || "11.15.1";
   const testSuiteId = `hook-${version.replace(/\./g, "-")}`;
 
   beforeAll(async () => {

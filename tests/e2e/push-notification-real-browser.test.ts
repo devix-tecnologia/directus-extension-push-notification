@@ -1,6 +1,6 @@
 /**
  * Teste E2E REAL de Push Notification com browser Chromium
- * 
+ *
  * Este teste verifica o fluxo completo end-to-end:
  * 1. Login no Directus
  * 2. Habilitar push_enabled
@@ -22,7 +22,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
   }) => {
     // 1. Conceder permissões de notificação
     await context.grantPermissions(["notifications"]);
-    
+
     console.log("✅ Permissões de notificação concedidas");
 
     // 2. Fazer login via UI
@@ -30,7 +30,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
     await page.fill('input[type="email"]', DIRECTUS_EMAIL);
     await page.fill('input[type="password"]', DIRECTUS_PASSWORD);
     await page.click('button[type="submit"]');
-    
+
     // Aguardar redirecionamento
     await page.waitForURL(/\/admin\/content/, { timeout: 15000 });
     console.log("✅ Login realizado");
@@ -42,6 +42,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
         const parsed = JSON.parse(authData);
         return parsed.access_token || parsed.token;
       }
+
       return null;
     });
 
@@ -85,7 +86,9 @@ test.describe("Push Notification E2E Real no Browser", () => {
     // Se não houver subscription, pode ser porque o browser não suporta ou falhou
     // Vamos tentar forçar o registro manualmente via evaluate
     if (subscriptionsData.data.length === 0) {
-      console.log("⚠️  Nenhuma subscription encontrada, tentando registrar manualmente...");
+      console.log(
+        "⚠️  Nenhuma subscription encontrada, tentando registrar manualmente...",
+      );
 
       // Tentar registrar via JavaScript no browser
       const registrationResult = await page.evaluate(async () => {
@@ -115,12 +118,15 @@ test.describe("Push Notification E2E Real no Browser", () => {
             for (let i = 0; i < rawData.length; ++i) {
               outputArray[i] = rawData.charCodeAt(i);
             }
+
             return outputArray;
           }
 
           const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            applicationServerKey: urlBase64ToUint8Array(
+              vapidPublicKey,
+            ) as BufferSource,
           });
 
           return {
@@ -130,21 +136,27 @@ test.describe("Push Notification E2E Real no Browser", () => {
               p256dh: btoa(
                 String.fromCharCode.apply(
                   null,
-                  // @ts-ignore
+                  // @ts-expect-error - Chromium não tem tipagem correta para Uint8Array
                   new Uint8Array(subscription.getKey("p256dh")),
                 ),
               ),
               auth: btoa(
                 String.fromCharCode.apply(
                   null,
-                  // @ts-ignore
+                  // @ts-expect-error - Chromium não tem tipagem correta para Uint8Array
                   new Uint8Array(subscription.getKey("auth")),
                 ),
               ),
             },
           };
-        } catch (error: any) {
-          return { success: false, error: error.message };
+        } catch (error: unknown) {
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : String(error),
+          };
         }
       });
 
@@ -185,7 +197,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
 
     const finalSubscriptionsData = await finalSubscriptionsResponse.json();
     expect(finalSubscriptionsData.data.length).toBeGreaterThan(0);
-    
+
     const subscription = finalSubscriptionsData.data[0];
     console.log(`✅ Subscription ID: ${subscription.id}`);
 
@@ -225,12 +237,14 @@ test.describe("Push Notification E2E Real no Browser", () => {
 
     const deliveriesData = await deliveriesResponse.json();
     console.log(`✅ Deliveries criados: ${deliveriesData.data.length}`);
-    
+
     expect(deliveriesData.data.length).toBeGreaterThan(0);
 
     const delivery = deliveriesData.data[0];
     console.log(`✅ Delivery status: ${delivery.status}`);
-    console.log(`✅ Delivery subscription_id: ${delivery.push_subscription_id}`);
+    console.log(
+      `✅ Delivery subscription_id: ${delivery.push_subscription_id}`,
+    );
 
     // Status pode ser 'sent', 'failed' ou 'delivered'
     expect(["sent", "failed", "delivered"]).toContain(delivery.status);
