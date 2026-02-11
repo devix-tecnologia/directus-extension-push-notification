@@ -10,3 +10,4 @@ directus-state.json.backup
 # pnpm
 .pnpm-store
 .pnpm-debug.log
+test-output.log

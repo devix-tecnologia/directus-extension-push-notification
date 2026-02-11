@@ -124,7 +124,7 @@ Os testes de integração usam:
 
 - **Docker Compose**: Container isolado do Directus para cada suíte
 - **SQLite**: Banco de dados em memória para velocidade
-- **Versão Directus**: 11.14.1 (configurável via `DIRECTUS_TEST_VERSION`)
+- **Versão Directus**: 11.15.1 (configurável via `DIRECTUS_TEST_VERSION`)
 - **Credenciais**: admin@example.com / admin123
 - **Timeout**: 420 segundos (7 minutos) para setup
 - **Isolamento**: Cada suíte usa um `testSuiteId` único

@@ -14,7 +14,7 @@ import {
 } from "./helpers/test-helpers.js";
 
 describe("Debug - Testar Hook", () => {
-  const version = process.env.DIRECTUS_TEST_VERSION || "11.14.1";
+  const version = process.env.DIRECTUS_TEST_VERSION || "11.15.1";
   const testSuiteId = `debug-hook-${version.replace(/\./g, "-")}`;
   let userId: string;
 
@@ -41,7 +41,6 @@ describe("Debug - Testar Hook", () => {
       testSuiteId,
     );
 
-    // eslint-disable-next-line no-console
     console.log(
       "User push_enabled:",
       (user.data as { push_enabled: number }).push_enabled,
@@ -56,7 +55,6 @@ describe("Debug - Testar Hook", () => {
       testSuiteId,
     );
 
-    // eslint-disable-next-line no-console
     console.log("Subscription created:", subscription.id);
 
     // 3. Criar notification
@@ -70,7 +68,6 @@ describe("Debug - Testar Hook", () => {
       testSuiteId,
     );
 
-    // eslint-disable-next-line no-console
     console.log("Notification created:", notification.id);
 
     // 4. Aguardar hook processar
@@ -79,9 +76,8 @@ describe("Debug - Testar Hook", () => {
     // 5. Buscar deliveries
     const deliveries = await getPushDeliveries(notification.id, testSuiteId);
 
-    // eslint-disable-next-line no-console
     console.log("Deliveries found:", deliveries.length);
-    // eslint-disable-next-line no-console
+
     console.log("Deliveries:", JSON.stringify(deliveries, null, 2));
 
     expect(deliveries).toHaveLength(1);

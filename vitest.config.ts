@@ -9,5 +9,7 @@ export default defineConfig({
     // Executar testes de integração sequencialmente para evitar conflitos Docker
     fileParallelism: false,
     maxConcurrency: 1,
+    // Excluir testes E2E do Playwright
+    exclude: ["**/node_modules/**", "**/.git/**", "**/tests/e2e/**"],
   },
 });

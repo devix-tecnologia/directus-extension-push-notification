@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 interface Logger {
   info: (message: string, ...args: unknown[]) => void;
   warn: (message: string, ...args: unknown[]) => void;

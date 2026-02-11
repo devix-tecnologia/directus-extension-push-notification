@@ -8,7 +8,6 @@
  * 4. Verificar o status da entrega
  */
 
-/* eslint-disable no-console */
 import { test, expect, type BrowserContext } from "@playwright/test";
 
 const BASE_URL = process.env.TEST_URL || "http://localhost:8055";

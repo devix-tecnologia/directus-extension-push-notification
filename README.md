@@ -179,9 +179,10 @@ Here's a basic example of how to integrate push notifications in your web applic
 const permission = await Notification.requestPermission();
 
 if (permission === "granted") {
-  // Register service worker
-  const registration =
-    await navigator.serviceWorker.register("/service-worker.js");
+  // Register service worker from extension endpoint
+  const registration = await navigator.serviceWorker.register(
+    "/extensions/push-notification-sw/sw.js"
+  );
 
   // Subscribe to push notifications
   const subscription = await registration.pushManager.subscribe({

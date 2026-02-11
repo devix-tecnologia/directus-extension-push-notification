@@ -1,7 +1,7 @@
 /**
  * Debug test para verificar como o Directus armazena tokens
  */
-/* eslint-disable */
+
 import { test, expect } from "@playwright/test";
 
 test("verifica armazenamento de auth do Directus", async ({ page }) => {

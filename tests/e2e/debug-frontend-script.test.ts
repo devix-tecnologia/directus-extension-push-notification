@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * Teste E2E REAL de Push Notification com browser
- * 
+ *
  * Este teste:
  * 1. Concede permissões de notificação ao browser
  * 2. Registra subscription REAL do Chromium
@@ -9,10 +9,6 @@
  * 4. Captura a notificação exibida no browser
  */
 import { test, expect } from "@playwright/test";
-
-const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
-const DIRECTUS_EMAIL = "admin@example.com";
-const DIRECTUS_PASSWORD = "admin123";
 
 test.describe("Push Notification E2E Real", () => {
   test("deve receber push notification real no browser", async ({

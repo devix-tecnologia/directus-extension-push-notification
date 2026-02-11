@@ -8,7 +8,7 @@ import { logger } from "../test-logger.js";
 import { getAdminUserId } from "./helpers/test-helpers.js";
 
 describe("Debug - Verificar Setup", () => {
-  const version = process.env.DIRECTUS_TEST_VERSION || "11.14.1";
+  const version = process.env.DIRECTUS_TEST_VERSION || "11.15.1";
   const testSuiteId = `debug-${version.replace(/\./g, "-")}`;
   let userId: string;
 
@@ -34,7 +34,6 @@ describe("Debug - Verificar Setup", () => {
       testSuiteId,
     );
 
-    // eslint-disable-next-line no-console
     console.log("User data:", response.data);
     expect(response.data).toHaveProperty("push_enabled");
   });
@@ -53,7 +52,7 @@ describe("Debug - Verificar Setup", () => {
     const collectionNames = (
       collections.data as Array<{ collection: string }>
     ).map((c) => c.collection);
-    // eslint-disable-next-line no-console
+
     console.log("Collections:", collectionNames);
 
     expect(collectionNames).toContain("push_subscription");

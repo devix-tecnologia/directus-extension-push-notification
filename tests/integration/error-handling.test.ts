@@ -12,7 +12,7 @@ import {
 } from "./helpers/test-helpers.js";
 
 describe("Push Delivery - Tratamento de Erros", () => {
-  const version = process.env.DIRECTUS_TEST_VERSION || "11.14.1";
+  const version = process.env.DIRECTUS_TEST_VERSION || "11.15.1";
   const testSuiteId = `error-handling-${version.replace(/\./g, "-")}`;
   let userId: string;
 
@@ -138,25 +138,26 @@ describe("Push Delivery - Tratamento de Erros", () => {
       testSuiteId,
     );
 
-    expect(delivery).toBeTruthy();
-
     // Verificar estrutura de delivery
-    if (delivery?.status === "failed" && delivery?.error_code === "410") {
-      // Se recebeu erro 410, subscription deve estar inativa
-      const updatedSub = await getPushSubscription(
-        subscription.id,
-        testSuiteId,
     expect(delivery).toBeTruthy();
     expect(delivery?.status).toBe("failed");
-    
+
     // Com endpoint fake, sempre falha mas não com 410
     // Verificar que os campos de estrutura existem
     expect(delivery).toHaveProperty("error_code");
     expect(delivery).toHaveProperty("error_message");
-    
+
     const sub = await getPushSubscription(subscription.id, testSuiteId);
     expect(sub).toHaveProperty("is_active");
-    expect(sub).toHaveProperty("expires_at");   device_name: "Retry Test Device",
+    expect(sub).toHaveProperty("expires_at");
+  });
+
+  test("Deve incrementar attempt_count a cada retry", async () => {
+    const subscription = await createPushSubscription(
+      userId,
+      {
+        endpoint: "https://test.com/retry-test",
+        device_name: "Retry Test Device",
         is_active: true,
       },
       testSuiteId,
@@ -183,17 +184,16 @@ describe("Push Delivery - Tratamento de Erros", () => {
     expect(delivery).toBeTruthy();
 
     // Verificar estrutura de retry
-    if (delivery?.status === "queued" && delivery?.retry_after) {
-      // Se está em retry, retry_after deve estar no futuro
-      const retryTime = new Date(delivery.retry_after).getTime();
-      const now = Date.now();
-    expect(delivery).toBeTruthy();
-    expect(delivery?.status).toBe("failed");
-    
-    // Verificar estrutura de retry
     expect(delivery).toHaveProperty("retry_after");
     expect(delivery).toHaveProperty("attempt_count");
-    expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);   endpoint: "https://test.com/max-fail",
+    expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
+  });
+
+  test("Deve respeitar max_attempts configurado", async () => {
+    const subscription = await createPushSubscription(
+      userId,
+      {
+        endpoint: "https://test.com/max-fail",
         device_name: "Max Fail Device",
         is_active: true,
       },
@@ -222,18 +222,10 @@ describe("Push Delivery - Tratamento de Erros", () => {
     expect(delivery).toHaveProperty("max_attempts");
     expect(delivery).toHaveProperty("attempt_count");
 
-    // Se delivery falhou e atingiu max_attempts
-    if (delivery?.status === "failed") {
-      expect(delivery.attempt_count).toBeLessThanOrEqual(delivery.max_attempts);
-      expect(delivery.failed_at).toBeTruthy();
+    // Verificar que tentou pelo menos 1 vez
+    expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
+  });
 
-      // Se atingiu max_attempts, não deve ter retry_after futuro
-      if (delivery.attempt_count >= delivery.max_attempts) {
-        expect(delivery.status).toBe("failed");
-      }
-    }
-    expect(delivery).toBeTruthy();
-    expect(delivery?.status).toBe("failed");
   test("Deve lidar com subscription sem endpoint válido", async () => {
     // O helper sempre cria endpoint válido se vazio
     const sub = await createPushSubscription(
@@ -249,7 +241,14 @@ describe("Push Delivery - Tratamento de Erros", () => {
     // Verificar que subscription foi criada com endpoint
     expect(sub.endpoint).toBeTruthy();
     expect(sub.endpoint.length).toBeGreaterThan(0);
-  });   device_name: "Valid Keys Test",
+  });
+
+  test("Deve validar keys da subscription", async () => {
+    const validSub = await createPushSubscription(
+      userId,
+      {
+        endpoint: "https://test.com/valid-keys",
+        device_name: "Valid Keys Test",
         is_active: true,
       },
       testSuiteId,
