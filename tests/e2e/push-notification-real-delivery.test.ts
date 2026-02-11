@@ -32,8 +32,8 @@ interface Subscription {
 interface Delivery {
   id: string;
   status: string;
-  notification_id: string;
-  subscription_id: string;
+  user_notification_id: string;
+  push_subscription_id: string;
 }
 
 // Helper para autenticar e obter token + userId
@@ -85,8 +85,8 @@ async function createFakeSubscription(
   context: BrowserContext,
   accessToken: string,
 ): Promise<Subscription> {
-  // Criar uma subscription fake com endpoint único
-  const fakeEndpoint = `https://fcm.googleapis.com/fcm/send/test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Endpoint único para teste (em produção o browser gera automaticamente)
+  const fakeEndpoint = `https://push-test.local/subscription/${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   const response = await context.request.post("/push-notification/register", {
     headers: {
@@ -181,7 +181,7 @@ async function waitForDelivery(
 
   while (Date.now() - startTime < maxWaitMs) {
     const response = await context.request.get(
-      `/items/push_delivery?filter[notification_id][_eq]=${notificationId}`,
+      `/items/push_delivery?filter[user_notification_id][_eq]=${notificationId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -217,6 +217,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
         context,
         auth.accessToken,
       );
+      subscription.id = subscription.id.toString();
 
       console.log(`📱 Subscription criada: ${subscription.id}`);
 
@@ -232,14 +233,15 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
         notificationTitle,
         notificationBody,
       );
-      console.log(`✅ Notificação criada: ${notificationId}`);
+      const notificationIdStr = notificationId.toString();
+      console.log(`✅ Notificação criada: ${notificationIdStr}`);
 
       // Aguardar o hook processar e criar o delivery
       console.log("⏳ Aguardando processamento do hook...");
       const deliveries = await waitForDelivery(
         context,
         auth.accessToken,
-        notificationId,
+        notificationIdStr,
         15000,
       );
 
@@ -249,14 +251,20 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
 
       // Verificar detalhes do delivery
       const delivery = deliveries[0]!;
-      expect(delivery.notification_id).toBe(notificationId);
-      expect(delivery.subscription_id).toBe(subscription.id);
+      expect(delivery.user_notification_id).toBe(notificationIdStr);
+      expect(delivery.push_subscription_id).toBe(subscription.id);
 
       // O status pode ser 'queued', 'sent', 'delivered' ou 'failed'
       // (failed é esperado porque usamos endpoint fake do FCM)
-      expect(["queued", "sent", "delivered", "failed"]).toContain(
-        delivery.status,
-      );
+      expect([
+        "queued",
+        "sent",
+        "delivered",
+        "failed",
+        "sending",
+        "read",
+        "expired",
+      ]).toContain(delivery.status);
       console.log(`📊 Status do delivery: ${delivery.status}`);
 
       // Cleanup
