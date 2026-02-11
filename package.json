@@ -1,6 +1,6 @@
 {
-  "name": "@devix-tecnologia/directus-extension-push-notification",
-  "description": "A simple and straightforward push notification management extension for Directus",
+  "name": "directus-extension-push-notification",
+  "description": "Complete push notification system for Directus with multi-device support, delivery tracking, and service worker integration",
   "icon": "extension",
   "private": false,
   "version": "0.1.2",
@@ -10,14 +10,23 @@
     "directus-extension",
     "directus-custom-bundle",
     "push-notification",
+    "push-notifications",
     "web-push",
     "notifications",
-    "vapid"
+    "vapid",
+    "service-worker",
+    "multi-device",
+    "delivery-tracking",
+    "fcm",
+    "browser-notifications",
+    "real-time"
   ],
   "files": [
     "dist/**/*",
     "package.json",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
   ],
   "directus:extension": {
     "host": "^10.1.7",
@@ -36,6 +45,11 @@
         "type": "endpoint",
         "name": "push-notification-sw",
         "source": "src/push-notification-sw/index.ts"
+      },
+      {
+        "type": "endpoint",
+        "name": "push-client-script",
+        "source": "src/push-client-script/index.ts"
       },
       {
         "type": "endpoint",

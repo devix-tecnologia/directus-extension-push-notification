@@ -20,6 +20,8 @@ interface DeliveryRecord {
 export default defineHook(({ filter, action }, { services, logger }) => {
   const { ItemsService } = services;
 
+  logger.info("[Notification Trigger] Hook registered");
+
   filter("user_notification.items.create", async (payload) => {
     logger.debug(
       "[Notification Trigger] Filter user_notification.items.create",
@@ -29,56 +31,86 @@ export default defineHook(({ filter, action }, { services, logger }) => {
   });
 
   action("items.create", async (meta, { schema, database }) => {
-    // Apenas processar se for user_notification
-    if (meta.collection !== "user_notification") {
-      return;
-    }
-
-    logger.info(
-      "[Notification Trigger] Processing items.create for user_notification",
-      {
-        key: meta.key,
-        payload: meta.payload,
-      },
-    );
-
-    const notification = { ...meta.payload, id: meta.key };
-
-    // Apenas processar se channel === 'push'
-    if (notification.channel !== "push") {
-      logger.debug(
-        `[Notification Trigger] Notification ${notification.id} is not push channel, skipping`,
-      );
-      return;
-    }
-
-    logger.debug(
-      "[Notification Trigger] Channel is push, processing notification",
-    );
-
-    // Configurar VAPID keys (precisa ser feito aqui pois env não está disponível no escopo externo)
-    const env = process.env;
-    webpush.setVapidDetails(
-      env.PUBLIC_URL || "mailto:admin@example.com",
-      env.VAPID_PUBLIC_KEY!,
-      env.VAPID_PRIVATE_KEY!,
-    );
-
-    // Buscar usuário destinatário com configurações de push
-    const usersService = new ItemsService("directus_users", {
-      schema: schema!,
-      knex: database,
-    });
-    const subscriptionsService = new ItemsService("push_subscription", {
-      schema: schema!,
-      knex: database,
-    });
-    const deliveryService = new ItemsService("push_delivery", {
-      schema: schema!,
-      knex: database,
-    });
-
     try {
+      logger.debug(
+        `[Notification Trigger] Action items.create fired for collection: ${meta.collection}`,
+      );
+
+      // Apenas processar se for user_notification
+      if (meta.collection !== "user_notification") {
+        return;
+      }
+
+      logger.info(
+        "[Notification Trigger] Processing items.create for user_notification",
+        {
+          key: meta.key,
+          payload: meta.payload,
+        },
+      );
+
+      const notification = { ...meta.payload, id: meta.key };
+
+      // Apenas processar se channel === 'push'
+      if (notification.channel !== "push") {
+        logger.debug(
+          `[Notification Trigger] Notification ${notification.id} is not push channel, skipping`,
+        );
+        return;
+      }
+
+      logger.debug(
+        "[Notification Trigger] Channel is push, processing notification",
+      );
+
+      // Configurar VAPID keys (precisa ser feito aqui pois env não está disponível no escopo externo)
+      const env = process.env;
+
+      if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+        logger.error("[Notification Trigger] VAPID keys not configured", {
+          notification_id: notification.id,
+        });
+        return;
+      }
+
+      // VAPID subject (identificação do servidor de push)
+      // Pode ser: https://seusite.com ou mailto:contato@seusite.com
+      // Prioridade: VAPID_SUBJECT > PUBLIC_URL > fallback
+      let vapidSubject =
+        env.VAPID_SUBJECT || env.PUBLIC_URL || "mailto:admin@example.com";
+
+      // URLs http:// não são aceitas, converter para mailto:
+      if (vapidSubject.startsWith("http://")) {
+        vapidSubject = "mailto:admin@example.com";
+        logger.warn(
+          `[Notification Trigger] PUBLIC_URL is http://, using mailto: fallback. Set VAPID_SUBJECT with https:// or mailto: for production.`,
+        );
+      }
+
+      logger.debug(`[Notification Trigger] VAPID subject: ${vapidSubject}`);
+
+      webpush.setVapidDetails(
+        vapidSubject,
+        env.VAPID_PUBLIC_KEY,
+        env.VAPID_PRIVATE_KEY,
+      );
+
+      logger.info("[Notification Trigger] VAPID configured successfully");
+
+      // Buscar usuário destinatário com configurações de push
+      const usersService = new ItemsService("directus_users", {
+        schema: schema!,
+        knex: database,
+      });
+      const subscriptionsService = new ItemsService("push_subscription", {
+        schema: schema!,
+        knex: database,
+      });
+      const deliveryService = new ItemsService("push_delivery", {
+        schema: schema!,
+        knex: database,
+      });
+
       const user = await usersService.readOne(notification.user_id, {
         fields: ["id", "push_enabled"],
       });
@@ -261,6 +293,8 @@ export default defineHook(({ filter, action }, { services, logger }) => {
         {
           error: err.message,
           stack: err.stack,
+          notification_id: meta.key,
+          collection: meta.collection,
         },
       );
     }

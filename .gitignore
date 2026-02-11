@@ -11,3 +11,30 @@ directus-state.json.backup
 .pnpm-store
 .pnpm-debug.log
 test-output.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.docker
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
