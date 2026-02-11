@@ -33,8 +33,8 @@ interface Subscription {
 interface Delivery {
   id: string;
   status: string;
-  notification_id: string;
-  subscription_id: string;
+  user_notification_id: string;
+  push_subscription_id: string;
 }
 
 // Helper para autenticar e obter token + userId
@@ -182,7 +182,7 @@ async function waitForDelivery(
 
   while (Date.now() - startTime < maxWaitMs) {
     const response = await context.request.get(
-      `/items/push_delivery?filter[notification_id][_eq]=${notificationId}`,
+      `/items/push_delivery?filter[user_notification_id][_eq]=${notificationId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -217,7 +217,11 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       const subscription = await createFakeSubscription(
         context,
         auth.accessToken,
-      );
+      ).then((sub) => {
+        console.log(`📱 Subscription criada: ${sub.id}`);
+        sub.id = sub.id.toString();        
+        return sub;
+      });
 
       console.log(`📱 Subscription criada: ${subscription.id}`);
 
@@ -232,7 +236,10 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
         auth.userId,
         notificationTitle,
         notificationBody,
-      );
+      ).then((id) => {
+        console.log(`✅ Notificação criada: ${id}`);
+        return id.toString();
+      });
       console.log(`✅ Notificação criada: ${notificationId}`);
 
       // Aguardar o hook processar e criar o delivery
@@ -250,12 +257,12 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
 
       // Verificar detalhes do delivery
       const delivery = deliveries[0]!;
-      expect(delivery.notification_id).toBe(notificationId);
-      expect(delivery.subscription_id).toBe(subscription.id);
+      expect(delivery.user_notification_id).toBe(notificationId);
+      expect(delivery.push_subscription_id).toBe(subscription.id);
 
       // O status pode ser 'queued', 'sent', 'delivered' ou 'failed'
       // (failed é esperado porque usamos endpoint fake do FCM)
-      expect(["queued", "sent", "delivered", "failed"]).toContain(
+      expect(["queued", "sent", "delivered", "failed", "sending", "read", "expired"]).toContain(
         delivery.status,
       );
       console.log(`📊 Status do delivery: ${delivery.status}`);

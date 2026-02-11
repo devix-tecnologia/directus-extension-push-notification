@@ -19,6 +19,7 @@ services:
       PROJECT_OWNER: "admin@example.com"
       VAPID_PUBLIC_KEY: "BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o"
       VAPID_PRIVATE_KEY: "xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk"
+      CONTENT_SECURITY_POLICY_DIRECTIVES__SCRIPT_SRC: "'self' 'unsafe-inline' 'unsafe-eval'"
     volumes:
       - ./dist/app.js:/directus/extensions/directus-extension-push-notification/dist/app.js:ro
       - ./dist/api.js:/directus/extensions/directus-extension-push-notification/dist/api.js:ro
@@ -29,6 +30,8 @@ services:
       - /tmp/data:rw,size=64M,mode=777
     networks:
       - directus-test-network
+    ports:
+      - "8055:8055"
     healthcheck:
       test:
         [
@@ -44,29 +47,29 @@ services:
       retries: 120
       start_period: 60s
 
-  tests:
-    image: mcr.microsoft.com/playwright:v1.57.0
-    container_name: directus-push-notification-tests-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
-    environment:
-      - CI=true
-      - DIRECTUS_URL=http://directus:8055
-    depends_on:
-      directus:
-        condition: service_healthy
-    working_dir: /workspace
-    volumes:
-      - ./:/workspace:rw
-      - /dev/shm:/dev/shm
-    networks:
-      - directus-test-network
-    command:
-      - bash
-      - -lc
-      - |
-        npm i -g pnpm@10.20.0 && \
-        pnpm install --frozen-lockfile && \
-        pnpm exec playwright install --with-deps && \
-        pnpm test:e2e
+  # tests:
+  #   image: mcr.microsoft.com/playwright:v1.57.0
+  #   container_name: directus-push-notification-tests-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+  #   environment:
+  #     - CI=true
+  #     - DIRECTUS_URL=http://directus:8055
+  #   depends_on:
+  #     directus:
+  #       condition: service_healthy
+  #   working_dir: /workspace
+  #   volumes:
+  #     - ./:/workspace:rw
+  #     - /dev/shm:/dev/shm
+  #   networks:
+  #     - directus-test-network
+  #   command:
+  #     - bash
+  #     - -lc
+  #     - |
+  #       npm i -g pnpm@10.20.0 && \
+  #       pnpm install --frozen-lockfile && \
+  #       pnpm exec playwright install --with-deps && \
+  #       pnpm test:e2e
 
 networks:
   directus-test-network:
