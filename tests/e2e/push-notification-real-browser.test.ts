@@ -152,10 +152,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
         } catch (error: unknown) {
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : String(error),
+            error: error instanceof Error ? error.message : String(error),
           };
         }
       });

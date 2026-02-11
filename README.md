@@ -181,7 +181,7 @@ const permission = await Notification.requestPermission();
 if (permission === "granted") {
   // Register service worker from extension endpoint
   const registration = await navigator.serviceWorker.register(
-    "/extensions/push-notification-sw/sw.js"
+    "/extensions/push-notification-sw/sw.js",
   );
 
   // Subscribe to push notifications
