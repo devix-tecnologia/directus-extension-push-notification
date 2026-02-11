@@ -20,7 +20,10 @@ export default defineEndpoint((router, { logger }) => {
       res.setHeader("Service-Worker-Allowed", "/");
       res.send(serviceWorkerCode);
     } catch (error) {
-      logger.error("[Push Notification SW] Failed to load service worker file", error);
+      logger.error(
+        "[Push Notification SW] Failed to load service worker file",
+        error,
+      );
       res.status(500).json({ error: "Failed to load service worker" });
     }
   });

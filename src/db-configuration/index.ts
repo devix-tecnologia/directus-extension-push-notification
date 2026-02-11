@@ -13,13 +13,12 @@ export default defineHook(
       );
 
       logger.debug("[DB Configuration] State file loaded successfully");
-      
+
       let collectionsCreated = 0;
       let fieldsCreated = 0;
       let relationsCreated = 0;
 
       if (directusState.collections) {
-
         const collectionsService = new CollectionsService({
           knex: database,
           schema: await getSchema(),
@@ -66,7 +65,6 @@ export default defineHook(
       }
 
       if (directusState.fields) {
-
         const fieldsService = new FieldsService({
           knex: database,
           schema: await getSchema({ database: database }),
@@ -109,7 +107,6 @@ export default defineHook(
       }
 
       if (directusState.relations) {
-
         const relationsService = new RelationsService({
           knex: database,
           schema: await getSchema({ database: database }),
@@ -157,14 +154,17 @@ export default defineHook(
       }
 
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      const totalChanges = collectionsCreated + fieldsCreated + relationsCreated;
-      
+      const totalChanges =
+        collectionsCreated + fieldsCreated + relationsCreated;
+
       if (totalChanges > 0) {
         logger.info(
           `[DB Configuration] Completed: ${collectionsCreated} collections, ${fieldsCreated} fields, ${relationsCreated} relations (${elapsed}s)`,
         );
       } else {
-        logger.debug("[DB Configuration] No changes needed - schema up to date");
+        logger.debug(
+          "[DB Configuration] No changes needed - schema up to date",
+        );
       }
     });
   },
