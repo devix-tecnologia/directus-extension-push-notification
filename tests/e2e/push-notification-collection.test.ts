@@ -300,7 +300,7 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     const loginData = await response.json();
     const accessToken = loginData.data?.access_token;
 
-    // Buscar o user_id do admin
+    // Buscar o user do admin
     const userResponse = await sharedPage.context().request.get("/users/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -317,7 +317,7 @@ test.describe("Push Notification Extension - E2E Tests", () => {
           Authorization: `Bearer ${accessToken}`,
         },
         data: {
-          user_id: userId,
+          user: userId,
           endpoint: `https://fcm.googleapis.com/fcm/send/test-endpoint-${Date.now()}`,
           keys: {
             p256dh: "test-p256dh-key",

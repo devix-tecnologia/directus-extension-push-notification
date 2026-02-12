@@ -40,7 +40,7 @@ describe("Push Delivery - Estados e Transições", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "State Transition Test",
         body: "Testing state transitions",
         channel: "push",
@@ -60,8 +60,8 @@ describe("Push Delivery - Estados e Transições", () => {
     expect(delivery).toBeTruthy();
     expect(delivery?.status).toBe("failed");
     expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
-    expect(delivery?.queued_at).toBeTruthy();
-    expect(delivery?.failed_at).toBeTruthy();
+    expect(delivery?.date_queued).toBeTruthy();
+    expect(delivery?.date_failed).toBeTruthy();
     expect(delivery?.error_message).toBeTruthy();
   });
 
@@ -79,7 +79,7 @@ describe("Push Delivery - Estados e Transições", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Delivered State Test",
         body: "Testing delivered state",
         channel: "push",
@@ -104,13 +104,13 @@ describe("Push Delivery - Estados e Transições", () => {
       delivery!.id,
       {
         status: "delivered",
-        delivered_at: new Date().toISOString(),
+        date_delivered: new Date().toISOString(),
       },
       testSuiteId,
     );
 
     expect(updated.status).toBe("delivered");
-    expect(updated.delivered_at).toBeTruthy();
+    expect(updated.date_delivered).toBeTruthy();
   });
 
   test("Deve aceitar atualização para read quando usuário clica", async () => {
@@ -127,7 +127,7 @@ describe("Push Delivery - Estados e Transições", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Read State Test",
         body: "Testing read state",
         channel: "push",
@@ -151,7 +151,7 @@ describe("Push Delivery - Estados e Transições", () => {
         delivery.id,
         {
           status: "delivered",
-          delivered_at: new Date().toISOString(),
+          date_delivered: new Date().toISOString(),
         },
         testSuiteId,
       );
@@ -163,17 +163,17 @@ describe("Push Delivery - Estados e Transições", () => {
         delivery.id,
         {
           status: "read",
-          read_at: new Date().toISOString(),
+          date_read: new Date().toISOString(),
         },
         testSuiteId,
       );
 
       expect(read.status).toBe("read");
-      expect(read.read_at).toBeTruthy();
+      expect(read.date_read).toBeTruthy();
     }
   });
 
-  test("Deve validar sequência de timestamps: queued_at < sent_at < delivered_at < read_at", async () => {
+  test("Deve validar sequência de timestamps: date_queued < date_sent < date_delivered < date_read", async () => {
     const { MOCK_PUSH_SERVER } = await import("./helpers/test-helpers.js");
     const subscription = await createPushSubscription(
       userId,
@@ -187,7 +187,7 @@ describe("Push Delivery - Estados e Transições", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Timestamps Test",
         body: "Testing timestamp sequence",
         channel: "push",
@@ -211,7 +211,7 @@ describe("Push Delivery - Estados e Transições", () => {
         delivery.id,
         {
           status: "delivered",
-          delivered_at: new Date().toISOString(),
+          date_delivered: new Date().toISOString(),
         },
         testSuiteId,
       );
@@ -221,21 +221,21 @@ describe("Push Delivery - Estados e Transições", () => {
         delivery.id,
         {
           status: "read",
-          read_at: new Date().toISOString(),
+          date_read: new Date().toISOString(),
         },
         testSuiteId,
       );
 
       // Verificar sequência de timestamps
-      const queuedTime = new Date(delivery.queued_at).getTime();
-      const sentTime = delivery.sent_at
-        ? new Date(delivery.sent_at).getTime()
+      const queuedTime = new Date(delivery.date_queued).getTime();
+      const sentTime = delivery.date_sent
+        ? new Date(delivery.date_sent).getTime()
         : 0;
-      const deliveredTime = delivery.delivered_at
-        ? new Date(delivery.delivered_at).getTime()
+      const deliveredTime = delivery.date_delivered
+        ? new Date(delivery.date_delivered).getTime()
         : 0;
-      const readTime = delivery.read_at
-        ? new Date(delivery.read_at).getTime()
+      const readTime = delivery.date_read
+        ? new Date(delivery.date_read).getTime()
         : 0;
 
       expect(queuedTime).toBeGreaterThan(0);
@@ -266,7 +266,7 @@ describe("Push Delivery - Estados e Transições", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Attempts Test",
         body: "Testing attempt count",
         channel: "push",
@@ -301,7 +301,7 @@ describe("Push Delivery - Estados e Transições", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Max Attempts Test",
         body: "Testing max attempts",
         channel: "push",

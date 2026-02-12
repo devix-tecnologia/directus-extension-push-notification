@@ -415,47 +415,47 @@ erDiagram
 
     push_subscription {
         uuid id PK
-        uuid user_id FK "→ directus_users"
+        uuid user FK "→ directus_users"
         text endpoint "unique, push endpoint URL"
         json keys "p256dh and auth keys"
         string user_agent "browser identification"
         string device_name "optional friendly name"
         boolean is_active "default: true"
-        timestamp created_at
-        timestamp last_used_at
-        timestamp expires_at
+        timestamp date_created
+        timestamp date_last_used
+        timestamp date_expires
     }
 
     user_notification {
         uuid id PK
         string title "required"
         text body "required"
-        uuid user_id FK "→ directus_users (recipient)"
+        uuid user FK "→ directus_users (recipient)"
         enum channel "push/email/sms/in_app"
         enum priority "low/normal/high/urgent"
         string action_url "URL to open on click"
         string icon_url "custom notification icon"
         json data "additional app data"
-        uuid created_by FK "→ directus_users (creator)"
-        timestamp created_at
-        timestamp expires_at
+        uuid user_created FK "→ directus_users (creator)"
+        timestamp date_created
+        timestamp date_expires
     }
 
     push_delivery {
         uuid id PK
-        uuid user_notification_id FK "→ user_notification"
-        uuid push_subscription_id FK "→ push_subscription"
+        uuid notification FK "→ user_notification"
+        uuid subscription FK "→ push_subscription"
         enum status "queued/sending/sent/delivered/read/failed/expired"
         integer attempt_count "default: 0"
         integer max_attempts "default: 3"
-        timestamp queued_at
-        timestamp sent_at
-        timestamp delivered_at "Service Worker callback"
-        timestamp read_at "User interaction"
-        timestamp failed_at
+        timestamp date_queued
+        timestamp date_sent
+        timestamp date_delivered "Service Worker callback"
+        timestamp date_read "User interaction"
+        timestamp date_failed
         string error_code "e.g., 410, INVALID_SUBSCRIPTION"
         text error_message
-        timestamp retry_after "for transient failures"
+        timestamp date_retry "for transient failures"
         json metadata "additional delivery info"
     }
 ```
@@ -471,15 +471,16 @@ Stores user device subscriptions for push notifications.
 **Fields:**
 
 - `id` (uuid) - Primary key
-- `user_id` (m2o → directus_users) - Owner of the subscription
+- `user` (m2o → directus_users) - Owner of the subscription
 - `endpoint` (text, unique) - Push subscription endpoint
 - `keys` (json) - Push subscription keys (p256dh, auth)
 - `user_agent` (string) - Browser user agent for device identification
 - `device_name` (string, nullable) - Optional friendly device name
 - `is_active` (boolean, default: true) - Whether the subscription is active
-- `created_at` (timestamp) - When the subscription was created
-- `last_used_at` (timestamp) - Last time the subscription was used
-- `expires_at` (timestamp) - When the subscription expired
+- `date_created` (timestamp) - When the subscription was created
+- `date_last_used` (timestamp) - Last time the subscription was used
+- `date_expires` (timestamp) - When the subscription expires
+- `deliveries` (o2m → push_delivery) - Virtual field showing all deliveries for this subscription
 
 #### 2. `user_notification` (Messages)
 
@@ -490,15 +491,16 @@ Stores notification messages for users across all channels.
 - `id` (uuid) - Primary key
 - `title` (string, required) - Notification title
 - `body` (text, required) - Notification content
-- `user_id` (m2o → directus_users) - Recipient
+- `user` (m2o → directus_users) - Recipient
 - `channel` (enum: push/email/sms/in_app) - Delivery channel
 - `priority` (enum: low/normal/high/urgent, default: normal) - Priority level
 - `action_url` (string) - URL to open when clicked
 - `icon_url` (string) - Custom icon URL
 - `data` (json) - Additional data for the app
-- `created_by` (m2o → directus_users) - Creator
-- `created_at` (timestamp) - Creation timestamp
-- `expires_at` (timestamp) - Expiration timestamp
+- `user_created` (m2o → directus_users) - Creator
+- `date_created` (timestamp) - Creation timestamp
+- `date_expires` (timestamp) - Expiration timestamp
+- `deliveries` (o2m → push_delivery) - Virtual field showing all deliveries for this notification
 
 #### 3. `push_delivery` (Join Table)
 
@@ -507,16 +509,16 @@ Tracks delivery status for each notification-device pair.
 **Fields:**
 
 - `id` (uuid) - Primary key
-- `user_notification_id` (m2o → user_notification) - Which notification
-- `push_subscription_id` (m2o → push_subscription) - Which device
+- `notification` (m2o → user_notification) - Which notification
+- `subscription` (m2o → push_subscription) - Which device
 - `status` (enum) - queued/sending/sent/delivered/read/failed/expired
 - `attempt_count` (integer, default: 0) - Number of send attempts
 - `max_attempts` (integer, default: 3) - Maximum retry attempts
-- `queued_at` (timestamp) - When queued
-- `sent_at` (timestamp) - When sent to push service
-- `delivered_at` (timestamp) - When delivered to device (Service Worker callback)
-- `read_at` (timestamp) - When user clicked/read
-- `failed_at` (timestamp) - When failed permanently
+- `date_queued` (timestamp) - When queued
+- `date_sent` (timestamp) - When sent to push service
+- `date_delivered` (timestamp) - When delivered to device (Service Worker callback)
+- `date_read` (timestamp) - When user clicked/read
+- `date_failed` (timestamp) - When failed permanently
 - `error_code` (string) - Error code (e.g., "410", "INVALID_SUBSCRIPTION")
 - `error_message` (text) - Detailed error message
 - `retry_after` (timestamp) - When to retry (for transient failures)

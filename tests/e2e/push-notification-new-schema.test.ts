@@ -94,15 +94,15 @@ test.describe("Push Notification - New Schema", () => {
   test("deve verificar campos de push_subscription", async ({ request }) => {
     const fields = [
       "id",
-      "user_id",
+      "user",
       "endpoint",
       "keys",
       "user_agent",
       "device_name",
       "is_active",
-      "created_at",
-      "last_used_at",
-      "expires_at",
+      "date_created",
+      "date_last_used",
+      "date_expires",
     ];
 
     for (const field of fields) {
@@ -126,15 +126,15 @@ test.describe("Push Notification - New Schema", () => {
       "id",
       "title",
       "body",
-      "user_id",
+      "user",
       "channel",
       "priority",
       "action_url",
       "icon_url",
       "data",
-      "created_by",
-      "created_at",
-      "expires_at",
+      "user_created",
+      "date_created",
+      "date_expires",
     ];
 
     for (const field of fields) {
@@ -156,19 +156,19 @@ test.describe("Push Notification - New Schema", () => {
   test("deve verificar campos de push_delivery", async ({ request }) => {
     const fields = [
       "id",
-      "user_notification_id",
-      "push_subscription_id",
+      "notification",
+      "subscription",
       "status",
       "attempt_count",
       "max_attempts",
-      "queued_at",
-      "sent_at",
-      "delivered_at",
-      "read_at",
-      "failed_at",
+      "date_queued",
+      "date_sent",
+      "date_delivered",
+      "date_read",
+      "date_failed",
       "error_code",
       "error_message",
-      "retry_after",
+      "date_retry",
       "metadata",
     ];
 

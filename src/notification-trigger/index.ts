@@ -111,7 +111,7 @@ export default defineHook(({ filter, action }, { services, logger }) => {
         knex: database,
       });
 
-      const user = await usersService.readOne(notification.user_id, {
+      const user = await usersService.readOne(notification.user, {
         fields: ["id", "push_enabled"],
       });
 
@@ -134,7 +134,7 @@ export default defineHook(({ filter, action }, { services, logger }) => {
       // Buscar TODAS as subscriptions ATIVAS do usuário (múltiplos dispositivos)
       const subscriptions = await subscriptionsService.readByQuery({
         filter: {
-          user_id: { _eq: notification.user_id },
+          user: { _eq: notification.user },
           is_active: { _eq: true },
         },
         limit: -1,
@@ -164,10 +164,10 @@ export default defineHook(({ filter, action }, { services, logger }) => {
         );
 
         const deliveryRecord = await deliveryService.createOne({
-          user_notification_id: notification.id,
-          push_subscription_id: sub.id,
+          notification: notification.id,
+          subscription: sub.id,
           status: "queued",
-          queued_at: new Date().toISOString(),
+          date_queued: new Date().toISOString(),
           attempt_count: 0,
           max_attempts: 3,
         });
@@ -215,8 +215,8 @@ export default defineHook(({ filter, action }, { services, logger }) => {
             icon_url: notification.icon_url,
             action_url: notification.action_url,
             priority: notification.priority,
-            user_notification_id: notification.id,
-            push_delivery_id: delivery.id, // ⭐ Service Worker usa isso
+            notification_id: notification.id,
+            delivery_id: delivery.id, // ⭐ Service Worker usa isso
           });
 
           await webpush.sendNotification(subscription, pushPayload);
@@ -225,12 +225,12 @@ export default defineHook(({ filter, action }, { services, logger }) => {
           // Atualizar status para 'sent'
           await deliveryService.updateOne(delivery.id, {
             status: "sent",
-            sent_at: new Date().toISOString(),
+            date_sent: new Date().toISOString(),
           });
 
-          // Atualizar last_used_at da subscription
+          // Atualizar date_last_used da subscription
           await subscriptionsService.updateOne(sub.id, {
-            last_used_at: new Date().toISOString(),
+            date_last_used: new Date().toISOString(),
           });
 
           logger.info(
@@ -256,10 +256,10 @@ export default defineHook(({ filter, action }, { services, logger }) => {
           // Atualizar status para 'failed'
           await deliveryService.updateOne(delivery.id, {
             status: shouldRetry ? "queued" : "failed",
-            failed_at: shouldRetry ? null : new Date().toISOString(),
+            date_failed: shouldRetry ? null : new Date().toISOString(),
             error_code: String(err.statusCode || "UNKNOWN"),
             error_message: err.message,
-            retry_after: shouldRetry
+            date_retry: shouldRetry
               ? new Date(Date.now() + 60000).toISOString()
               : null, // 1min
             metadata: {
@@ -276,7 +276,7 @@ export default defineHook(({ filter, action }, { services, logger }) => {
 
             await subscriptionsService.updateOne(sub.id, {
               is_active: false,
-              expires_at: new Date().toISOString(),
+              date_expires: new Date().toISOString(),
             });
           }
         }

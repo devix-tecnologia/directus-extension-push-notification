@@ -17,7 +17,7 @@ export const VALID_TEST_KEYS = {
 
 export interface PushSubscription {
   id: string;
-  user_id: string;
+  user: string;
   endpoint: string;
   keys: {
     p256dh: string;
@@ -26,28 +26,28 @@ export interface PushSubscription {
   user_agent?: string;
   device_name?: string;
   is_active: boolean;
-  created_at: string;
-  last_used_at?: string;
-  expires_at?: string;
+  date_created: string;
+  date_last_used?: string;
+  date_expires?: string;
 }
 
 export interface UserNotification {
   id: string;
   title: string;
   body: string;
-  user_id: string;
+  user: string;
   channel: "push" | "email" | "sms" | "in_app";
   priority: "low" | "normal" | "high" | "urgent";
   action_url?: string;
   icon_url?: string;
   data?: Record<string, unknown>;
-  created_at: string;
+  date_created: string;
 }
 
 export interface PushDelivery {
   id: string;
-  user_notification_id: string;
-  push_subscription_id: string;
+  notification: string;
+  subscription: string;
   status:
     | "queued"
     | "sending"
@@ -58,14 +58,14 @@ export interface PushDelivery {
     | "expired";
   attempt_count: number;
   max_attempts: number;
-  queued_at: string;
-  sent_at?: string;
-  delivered_at?: string;
-  read_at?: string;
-  failed_at?: string;
+  date_queued: string;
+  date_sent?: string;
+  date_delivered?: string;
+  date_read?: string;
+  date_failed?: string;
   error_code?: string;
   error_message?: string;
-  retry_after?: string;
+  date_retry?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -81,7 +81,7 @@ export async function createPushSubscription(
     "POST",
     "/items/push_subscription",
     {
-      user_id: userId,
+      user: userId,
       endpoint:
         options.endpoint ||
         `https://fcm.googleapis.com/fcm/send/test-${Date.now()}`,
@@ -103,7 +103,7 @@ export async function createPushSubscription(
  * Cria uma user notification para testes
  */
 export async function createUserNotification(
-  data: Partial<UserNotification> & { user_id: string },
+  data: Partial<UserNotification> & { user: string },
   testSuiteId?: string,
 ): Promise<UserNotification> {
   const response = await dockerHttpRequest(
@@ -112,7 +112,7 @@ export async function createUserNotification(
     {
       title: data.title || "Test Notification",
       body: data.body || "Test notification body",
-      user_id: data.user_id,
+      user: data.user,
       channel: data.channel || "push",
       priority: data.priority || "normal",
       action_url: data.action_url || null,
@@ -137,7 +137,7 @@ export async function getPushDeliveries(
 ): Promise<PushDelivery[]> {
   const response = await dockerHttpRequest(
     "GET",
-    `/items/push_delivery?filter[user_notification_id][_eq]=${notificationId}`,
+    `/items/push_delivery?filter[notification][_eq]=${notificationId}`,
     undefined,
     {
       Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
@@ -158,7 +158,7 @@ export async function getPushDelivery(
 ): Promise<PushDelivery | null> {
   const response = await dockerHttpRequest(
     "GET",
-    `/items/push_delivery?filter[user_notification_id][_eq]=${notificationId}&filter[push_subscription_id][_eq]=${subscriptionId}`,
+    `/items/push_delivery?filter[notification][_eq]=${notificationId}&filter[subscription][_eq]=${subscriptionId}`,
     undefined,
     {
       Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,

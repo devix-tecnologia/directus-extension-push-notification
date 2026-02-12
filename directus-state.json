@@ -23,7 +23,20 @@
         "singleton": false,
         "sort": null,
         "sort_field": null,
-        "translations": null,
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "Push Subscriptions",
+            "singular": "Push Subscription",
+            "plural": "Push Subscriptions"
+          },
+          {
+            "language": "pt-BR",
+            "translation": "Inscrições Push",
+            "singular": "Inscrição Push",
+            "plural": "Inscrições Push"
+          }
+        ],
         "unarchive_value": true
       },
       "schema": {
@@ -38,7 +51,7 @@
         "collapse": "open",
         "collection": "user_notification",
         "color": null,
-        "display_template": "{{title}} - {{user_id}}",
+        "display_template": "{{title}} - {{user.first_name}} {{user.last_name}}",
         "group": null,
         "hidden": false,
         "icon": "notifications",
@@ -47,8 +60,21 @@
         "preview_url": null,
         "singleton": false,
         "sort": null,
-        "sort_field": "created_at",
-        "translations": null
+        "sort_field": "date_created",
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "User Notifications",
+            "singular": "User Notification",
+            "plural": "User Notifications"
+          },
+          {
+            "language": "pt-BR",
+            "translation": "Notificações de Usuário",
+            "singular": "Notificação de Usuário",
+            "plural": "Notificações de Usuário"
+          }
+        ]
       },
       "schema": {
         "name": "user_notification"
@@ -62,7 +88,7 @@
         "collapse": "open",
         "collection": "push_delivery",
         "color": null,
-        "display_template": "{{user_notification_id}} \u2192 {{push_subscription_id}} ({{status}})",
+        "display_template": "{{notification.title}} → {{subscription.device_name}} ({{status}})",
         "group": null,
         "hidden": false,
         "icon": "send",
@@ -71,8 +97,21 @@
         "preview_url": null,
         "singleton": false,
         "sort": null,
-        "sort_field": "queued_at",
-        "translations": null
+        "sort_field": "date_queued",
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "Push Deliveries",
+            "singular": "Push Delivery",
+            "plural": "Push Deliveries"
+          },
+          {
+            "language": "pt-BR",
+            "translation": "Entregas Push",
+            "singular": "Entrega Push",
+            "plural": "Entregas Push"
+          }
+        ]
       },
       "schema": {
         "name": "push_delivery"
@@ -89,7 +128,7 @@
         "field": "push_enabled",
         "interface": "boolean",
         "special": null,
-        "note": "Habilitar notifica\u00e7\u00f5es push",
+        "note": "Habilitar notificações push",
         "display": "boolean",
         "readonly": false,
         "hidden": false,
@@ -133,20 +172,22 @@
     },
     {
       "collection": "push_subscription",
-      "field": "user_id",
+      "field": "user",
       "type": "uuid",
       "meta": {
         "collection": "push_subscription",
-        "field": "user_id",
+        "field": "user",
         "interface": "select-dropdown-m2o",
         "special": ["m2o"],
         "required": true,
         "options": {
-          "template": "{{first_name}} {{last_name}}"
-        }
+          "template": "{{avatar}} {{first_name}} {{last_name}}"
+        },
+        "display": "user",
+        "display_options": null
       },
       "schema": {
-        "name": "user_id",
+        "name": "user",
         "table": "push_subscription",
         "data_type": "uuid",
         "is_nullable": false,
@@ -227,7 +268,7 @@
         "interface": "input",
         "special": null,
         "required": false,
-        "note": "Nome amig\u00e1vel do dispositivo"
+        "note": "Nome amigável do dispositivo"
       },
       "schema": {
         "name": "device_name",
@@ -247,7 +288,7 @@
         "field": "is_active",
         "interface": "boolean",
         "special": null,
-        "note": "Se a subscription est\u00e1 ativa"
+        "note": "Se a subscription está ativa"
       },
       "schema": {
         "name": "is_active",
@@ -260,17 +301,23 @@
     },
     {
       "collection": "push_subscription",
-      "field": "created_at",
+      "field": "date_created",
       "type": "timestamp",
       "meta": {
         "collection": "push_subscription",
-        "field": "created_at",
+        "field": "date_created",
         "interface": "datetime",
         "special": ["date-created"],
-        "readonly": true
+        "readonly": true,
+        "display": "datetime",
+        "display_options": {
+          "format": "short",
+          "use24": true,
+          "includeSeconds": true
+        }
       },
       "schema": {
-        "name": "created_at",
+        "name": "date_created",
         "table": "push_subscription",
         "data_type": "timestamp with time zone",
         "is_nullable": true,
@@ -279,17 +326,21 @@
     },
     {
       "collection": "push_subscription",
-      "field": "last_used_at",
+      "field": "date_last_used",
       "type": "timestamp",
       "meta": {
         "collection": "push_subscription",
-        "field": "last_used_at",
+        "field": "date_last_used",
         "interface": "datetime",
         "special": null,
-        "note": "\u00daltimo uso da subscription"
+        "note": "Último uso da subscription",
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "last_used_at",
+        "name": "date_last_used",
         "table": "push_subscription",
         "data_type": "timestamp with time zone",
         "is_nullable": true,
@@ -298,17 +349,21 @@
     },
     {
       "collection": "push_subscription",
-      "field": "expires_at",
+      "field": "date_expires",
       "type": "timestamp",
       "meta": {
         "collection": "push_subscription",
-        "field": "expires_at",
+        "field": "date_expires",
         "interface": "datetime",
         "special": null,
-        "note": "Expira\u00e7\u00e3o da subscription"
+        "note": "Expiração da subscription",
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "expires_at",
+        "name": "date_expires",
         "table": "push_subscription",
         "data_type": "timestamp with time zone",
         "is_nullable": true,
@@ -346,7 +401,7 @@
         "interface": "input",
         "special": null,
         "required": true,
-        "note": "T\u00edtulo da notifica\u00e7\u00e3o"
+        "note": "Título da notificação"
       },
       "schema": {
         "name": "title",
@@ -377,20 +432,22 @@
     },
     {
       "collection": "user_notification",
-      "field": "user_id",
+      "field": "user",
       "type": "uuid",
       "meta": {
         "collection": "user_notification",
-        "field": "user_id",
+        "field": "user",
         "interface": "select-dropdown-m2o",
         "special": ["m2o"],
         "required": true,
         "options": {
-          "template": "{{first_name}} {{last_name}}"
-        }
+          "template": "{{avatar}} {{first_name}} {{last_name}}"
+        },
+        "display": "user",
+        "display_options": null
       },
       "schema": {
-        "name": "user_id",
+        "name": "user",
         "table": "user_notification",
         "data_type": "uuid",
         "is_nullable": false,
@@ -506,7 +563,7 @@
         "field": "icon_url",
         "interface": "input",
         "special": null,
-        "note": "\u00cdcone customizado"
+        "note": "Ícone customizado"
       },
       "schema": {
         "name": "icon_url",
@@ -536,17 +593,22 @@
     },
     {
       "collection": "user_notification",
-      "field": "created_by",
+      "field": "user_created",
       "type": "uuid",
       "meta": {
         "collection": "user_notification",
-        "field": "created_by",
+        "field": "user_created",
         "interface": "select-dropdown-m2o",
         "special": ["user-created"],
-        "readonly": true
+        "readonly": true,
+        "display": "user",
+        "display_options": null,
+        "options": {
+          "template": "{{avatar}} {{first_name}} {{last_name}}"
+        }
       },
       "schema": {
-        "name": "created_by",
+        "name": "user_created",
         "table": "user_notification",
         "data_type": "uuid",
         "is_nullable": true,
@@ -556,17 +618,23 @@
     },
     {
       "collection": "user_notification",
-      "field": "created_at",
+      "field": "date_created",
       "type": "timestamp",
       "meta": {
         "collection": "user_notification",
-        "field": "created_at",
+        "field": "date_created",
         "interface": "datetime",
         "special": ["date-created"],
-        "readonly": true
+        "readonly": true,
+        "display": "datetime",
+        "display_options": {
+          "format": "short",
+          "use24": true,
+          "includeSeconds": true
+        }
       },
       "schema": {
-        "name": "created_at",
+        "name": "date_created",
         "table": "user_notification",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -574,17 +642,21 @@
     },
     {
       "collection": "user_notification",
-      "field": "expires_at",
+      "field": "date_expires",
       "type": "timestamp",
       "meta": {
         "collection": "user_notification",
-        "field": "expires_at",
+        "field": "date_expires",
         "interface": "datetime",
         "special": null,
-        "note": "Expira\u00e7\u00e3o da notifica\u00e7\u00e3o"
+        "note": "Expiração da notificação",
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "expires_at",
+        "name": "date_expires",
         "table": "user_notification",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -613,17 +685,17 @@
     },
     {
       "collection": "push_delivery",
-      "field": "user_notification_id",
+      "field": "notification",
       "type": "uuid",
       "meta": {
         "collection": "push_delivery",
-        "field": "user_notification_id",
+        "field": "notification",
         "interface": "select-dropdown-m2o",
         "special": ["m2o"],
         "required": true
       },
       "schema": {
-        "name": "user_notification_id",
+        "name": "notification",
         "table": "push_delivery",
         "data_type": "uuid",
         "is_nullable": false,
@@ -633,17 +705,17 @@
     },
     {
       "collection": "push_delivery",
-      "field": "push_subscription_id",
+      "field": "subscription",
       "type": "uuid",
       "meta": {
         "collection": "push_delivery",
-        "field": "push_subscription_id",
+        "field": "subscription",
         "interface": "select-dropdown-m2o",
         "special": ["m2o"],
         "required": true
       },
       "schema": {
-        "name": "push_subscription_id",
+        "name": "subscription",
         "table": "push_delivery",
         "data_type": "uuid",
         "is_nullable": false,
@@ -731,7 +803,7 @@
         "field": "max_attempts",
         "interface": "input",
         "special": null,
-        "note": "M\u00e1ximo de tentativas"
+        "note": "Máximo de tentativas"
       },
       "schema": {
         "name": "max_attempts",
@@ -743,17 +815,21 @@
     },
     {
       "collection": "push_delivery",
-      "field": "queued_at",
+      "field": "date_queued",
       "type": "timestamp",
       "meta": {
         "collection": "push_delivery",
-        "field": "queued_at",
+        "field": "date_queued",
         "interface": "datetime",
-        "special": ["date-created"],
-        "readonly": true
+        "special": null,
+        "readonly": true,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "queued_at",
+        "name": "date_queued",
         "table": "push_delivery",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -761,16 +837,20 @@
     },
     {
       "collection": "push_delivery",
-      "field": "sent_at",
+      "field": "date_sent",
       "type": "timestamp",
       "meta": {
         "collection": "push_delivery",
-        "field": "sent_at",
+        "field": "date_sent",
         "interface": "datetime",
-        "special": null
+        "special": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "sent_at",
+        "name": "date_sent",
         "table": "push_delivery",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -778,16 +858,20 @@
     },
     {
       "collection": "push_delivery",
-      "field": "delivered_at",
+      "field": "date_delivered",
       "type": "timestamp",
       "meta": {
         "collection": "push_delivery",
-        "field": "delivered_at",
+        "field": "date_delivered",
         "interface": "datetime",
-        "special": null
+        "special": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "delivered_at",
+        "name": "date_delivered",
         "table": "push_delivery",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -795,16 +879,20 @@
     },
     {
       "collection": "push_delivery",
-      "field": "read_at",
+      "field": "date_read",
       "type": "timestamp",
       "meta": {
         "collection": "push_delivery",
-        "field": "read_at",
+        "field": "date_read",
         "interface": "datetime",
-        "special": null
+        "special": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "read_at",
+        "name": "date_read",
         "table": "push_delivery",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -812,16 +900,20 @@
     },
     {
       "collection": "push_delivery",
-      "field": "failed_at",
+      "field": "date_failed",
       "type": "timestamp",
       "meta": {
         "collection": "push_delivery",
-        "field": "failed_at",
+        "field": "date_failed",
         "interface": "datetime",
-        "special": null
+        "special": null,
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "failed_at",
+        "name": "date_failed",
         "table": "push_delivery",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -836,7 +928,7 @@
         "field": "error_code",
         "interface": "input",
         "special": null,
-        "note": "C\u00f3digo do erro"
+        "note": "Código do erro"
       },
       "schema": {
         "name": "error_code",
@@ -866,17 +958,21 @@
     },
     {
       "collection": "push_delivery",
-      "field": "retry_after",
+      "field": "date_retry",
       "type": "timestamp",
       "meta": {
         "collection": "push_delivery",
-        "field": "retry_after",
+        "field": "date_retry",
         "interface": "datetime",
         "special": null,
-        "note": "Quando tentar novamente"
+        "note": "Quando tentar novamente",
+        "display": "datetime",
+        "display_options": {
+          "relative": true
+        }
       },
       "schema": {
-        "name": "retry_after",
+        "name": "date_retry",
         "table": "push_delivery",
         "data_type": "timestamp with time zone",
         "is_nullable": true
@@ -898,6 +994,204 @@
         "table": "push_delivery",
         "data_type": "json",
         "is_nullable": true
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "deliveries",
+      "type": "alias",
+      "meta": {
+        "collection": "user_notification",
+        "field": "deliveries",
+        "interface": "list-o2m",
+        "special": ["o2m"],
+        "required": false,
+        "options": {
+          "template": "{{subscription.device_name}} - {{status}}"
+        },
+        "display": "related-values",
+        "display_options": {
+          "template": "{{subscription.device_name}} - {{status}}"
+        },
+        "readonly": true,
+        "hidden": false,
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "Deliveries"
+          },
+          {
+            "language": "pt-BR",
+            "translation": "Entregas"
+          }
+        ],
+        "note": "Push deliveries sent for this notification"
+      },
+      "schema": null
+    },
+    {
+      "collection": "push_subscription",
+      "field": "deliveries",
+      "type": "alias",
+      "meta": {
+        "collection": "push_subscription",
+        "field": "deliveries",
+        "interface": "list-o2m",
+        "special": ["o2m"],
+        "required": false,
+        "options": {
+          "template": "{{notification.title}} ({{status}})"
+        },
+        "display": "related-values",
+        "display_options": {
+          "template": "{{notification.title}} ({{status}})"
+        },
+        "readonly": true,
+        "hidden": false,
+        "translations": [
+          {
+            "language": "en-US",
+            "translation": "Deliveries"
+          },
+          {
+            "language": "pt-BR",
+            "translation": "Entregas"
+          }
+        ],
+        "note": "Push deliveries received by this subscription"
+      },
+      "schema": null
+    }
+  ],
+  "relations": [
+    {
+      "collection": "user_notification",
+      "field": "user_created",
+      "related_collection": "directus_users",
+      "schema": {
+        "constraint_name": "user_notification_user_created_foreign",
+        "table": "user_notification",
+        "column": "user_created",
+        "foreign_key_schema": "public",
+        "foreign_key_table": "directus_users",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      },
+      "meta": {
+        "many_collection": "user_notification",
+        "many_field": "user_created",
+        "one_collection": "directus_users",
+        "one_field": null,
+        "one_collection_field": null,
+        "one_allowed_collections": null,
+        "junction_field": null,
+        "sort_field": null,
+        "one_deselect_action": "nullify"
+      }
+    },
+    {
+      "collection": "user_notification",
+      "field": "user",
+      "related_collection": "directus_users",
+      "schema": {
+        "constraint_name": "user_notification_user_foreign",
+        "table": "user_notification",
+        "column": "user",
+        "foreign_key_schema": "public",
+        "foreign_key_table": "directus_users",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      },
+      "meta": {
+        "many_collection": "user_notification",
+        "many_field": "user",
+        "one_collection": "directus_users",
+        "one_field": null,
+        "one_collection_field": null,
+        "one_allowed_collections": null,
+        "junction_field": null,
+        "sort_field": null,
+        "one_deselect_action": "nullify"
+      }
+    },
+    {
+      "collection": "push_subscription",
+      "field": "user",
+      "related_collection": "directus_users",
+      "schema": {
+        "constraint_name": "push_subscription_user_foreign",
+        "table": "push_subscription",
+        "column": "user",
+        "foreign_key_schema": "public",
+        "foreign_key_table": "directus_users",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      },
+      "meta": {
+        "many_collection": "push_subscription",
+        "many_field": "user",
+        "one_collection": "directus_users",
+        "one_field": null,
+        "one_collection_field": null,
+        "one_allowed_collections": null,
+        "junction_field": null,
+        "sort_field": null,
+        "one_deselect_action": "nullify"
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "notification",
+      "related_collection": "user_notification",
+      "schema": {
+        "constraint_name": "push_delivery_notification_foreign",
+        "table": "push_delivery",
+        "column": "notification",
+        "foreign_key_schema": "public",
+        "foreign_key_table": "user_notification",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {
+        "many_collection": "push_delivery",
+        "many_field": "notification",
+        "one_collection": "user_notification",
+        "one_field": "deliveries",
+        "one_collection_field": null,
+        "one_allowed_collections": null,
+        "junction_field": null,
+        "sort_field": null,
+        "one_deselect_action": "nullify"
+      }
+    },
+    {
+      "collection": "push_delivery",
+      "field": "subscription",
+      "related_collection": "push_subscription",
+      "schema": {
+        "constraint_name": "push_delivery_subscription_foreign",
+        "table": "push_delivery",
+        "column": "subscription",
+        "foreign_key_schema": "public",
+        "foreign_key_table": "push_subscription",
+        "foreign_key_column": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      },
+      "meta": {
+        "many_collection": "push_delivery",
+        "many_field": "subscription",
+        "one_collection": "push_subscription",
+        "one_field": "deliveries",
+        "one_collection_field": null,
+        "one_allowed_collections": null,
+        "junction_field": null,
+        "sort_field": null,
+        "one_deselect_action": "nullify"
       }
     }
   ]

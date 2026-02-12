@@ -62,15 +62,15 @@ describe("Push Notification Extension - Setup Hook", () => {
 
     const expectedFields = [
       "id",
-      "user_id",
+      "user",
       "endpoint",
       "keys",
       "user_agent",
       "device_name",
       "is_active",
-      "created_at",
-      "last_used_at",
-      "expires_at",
+      "date_created",
+      "date_last_used",
+      "date_expires",
     ];
 
     for (const expectedField of expectedFields) {

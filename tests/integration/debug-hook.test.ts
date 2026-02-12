@@ -60,7 +60,7 @@ describe("Debug - Testar Hook", () => {
     // 3. Criar notification
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Debug Test",
         body: "Testing hook execution",
         channel: "push",

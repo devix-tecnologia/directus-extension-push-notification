@@ -6,8 +6,8 @@ export interface PushNotificationData {
   icon_url?: string;
   action_url?: string;
   priority?: "low" | "normal" | "high" | "urgent";
-  user_notification_id?: string;
-  push_delivery_id?: string;
+  notification_id?: string; // Renamed from user_notification_id
+  delivery_id?: string; // Renamed from push_delivery_id
 }
 
 export interface Logger {

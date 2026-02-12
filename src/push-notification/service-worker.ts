@@ -57,7 +57,7 @@ class PushDeliveryStatusUpdater implements DeliveryStatusUpdater {
   ): Promise<void> {
     try {
       const timestampField =
-        status === "delivered" ? "delivered_at" : "read_at";
+        status === "delivered" ? "date_delivered" : "date_read";
 
       await fetch(`/items/push_delivery/${deliveryId}`, {
         method: "PATCH",
@@ -93,11 +93,11 @@ class PushNotificationHandler implements PushEventHandler {
       body: data.body || "Nova notificação do Directus",
       icon: data.icon_url || "/admin/favicon.ico",
       badge: "/admin/favicon.ico",
-      tag: data.user_notification_id || "directus-notification",
+      tag: data.notification_id || "directus-notification",
       data: {
         url: data.action_url || "/admin/notifications",
-        user_notification_id: data.user_notification_id,
-        push_delivery_id: data.push_delivery_id,
+        notification_id: data.notification_id,
+        delivery_id: data.delivery_id,
       },
       requireInteraction:
         data.priority === "urgent" || data.priority === "high",
@@ -108,10 +108,10 @@ class PushNotificationHandler implements PushEventHandler {
     ];
 
     // Confirma entrega (delivered) ao backend
-    if (data.push_delivery_id) {
+    if (data.delivery_id) {
       tasks.push(
         this.deliveryUpdater
-          .updateDeliveryStatus(data.push_delivery_id, "delivered")
+          .updateDeliveryStatus(data.delivery_id, "delivered")
           .catch((error: Error) => {
             this.logger.error("Failed to confirm delivery", error);
           }),
@@ -125,9 +125,9 @@ class PushNotificationHandler implements PushEventHandler {
     event.notification.close();
 
     // Marca como LIDA (read) na push_delivery
-    if (event.notification.data?.push_delivery_id) {
+    if (event.notification.data?.delivery_id) {
       await this.deliveryUpdater
-        .updateDeliveryStatus(event.notification.data.push_delivery_id, "read")
+        .updateDeliveryStatus(event.notification.data.delivery_id, "read")
         .catch((error: Error) => {
           this.logger.error("Failed to mark notification as read", error);
         });

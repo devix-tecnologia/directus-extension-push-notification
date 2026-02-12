@@ -37,7 +37,7 @@ describe("Push Delivery - Fluxo Completo", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Test Notification",
         body: "Testing delivery creation",
         channel: "push",
@@ -51,17 +51,13 @@ describe("Push Delivery - Fluxo Completo", () => {
     const deliveries = await getPushDeliveries(notification.id, testSuiteId);
 
     expect(deliveries).toHaveLength(1);
-    expect(String(deliveries[0]?.user_notification_id)).toBe(
-      String(notification.id),
-    );
-    expect(String(deliveries[0]?.push_subscription_id)).toBe(
-      String(subscription.id),
-    );
+    expect(String(deliveries[0]?.notification)).toBe(String(notification.id));
+    expect(String(deliveries[0]?.subscription)).toBe(String(subscription.id));
     expect(deliveries[0]?.status).toBe("sent");
-    expect(deliveries[0]?.sent_at).toBeTruthy();
+    expect(deliveries[0]?.date_sent).toBeTruthy();
   });
 
-  test("Deve atualizar last_used_at da subscription após envio", async () => {
+  test("Deve atualizar date_last_used da subscription após envio", async () => {
     const subscription = await createPushSubscription(
       userId,
       {
@@ -71,15 +67,15 @@ describe("Push Delivery - Fluxo Completo", () => {
     );
 
     // Timestamp original para referência (não utilizado no teste)
-    // const _originalLastUsed = subscription.last_used_at;
+    // const _originalLastUsed = subscription.date_last_used;
 
     await wait(100);
 
     await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Test Update",
-        body: "Testing last_used_at update",
+        body: "Testing date_last_used update",
         channel: "push",
       },
       testSuiteId,
@@ -92,10 +88,10 @@ describe("Push Delivery - Fluxo Completo", () => {
       testSuiteId,
     );
 
-    // Com endpoint fake, envio falha e last_used_at não é atualizado
+    // Com endpoint fake, envio falha e date_last_used não é atualizado
     // Este teste validaria se o campo existe e pode ser atualizado
-    expect(updatedSubscription).toHaveProperty("last_used_at");
-    // Em produção com endpoint real, last_used_at seria atualizado
+    expect(updatedSubscription).toHaveProperty("date_last_used");
+    // Em produção com endpoint real, date_last_used seria atualizado
   });
 
   test("Não deve criar push_delivery para channel diferente de push", async () => {
@@ -109,7 +105,7 @@ describe("Push Delivery - Fluxo Completo", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Email Notification",
         body: "This should not create push delivery",
         channel: "email",
@@ -137,7 +133,7 @@ describe("Push Delivery - Fluxo Completo", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Notification with Metadata",
         body: "Testing payload data",
         channel: "push",
@@ -156,11 +152,11 @@ describe("Push Delivery - Fluxo Completo", () => {
 
     // Buscar o delivery específico desta subscription
     const delivery = deliveries.find(
-      (d) => String(d.push_subscription_id) === String(testSub.id),
+      (d) => String(d.subscription) === String(testSub.id),
     );
     expect(delivery).toBeTruthy();
     expect(delivery?.status).toBe("failed");
     expect(delivery?.metadata).toBeTruthy();
-    expect(delivery?.failed_at).toBeTruthy();
+    expect(delivery?.date_failed).toBeTruthy();
   });
 });

@@ -32,8 +32,8 @@ interface Subscription {
 interface Delivery {
   id: string;
   status: string;
-  user_notification_id: string;
-  push_subscription_id: string;
+  notification: string;
+  subscription: string;
 }
 
 // Helper para autenticar e obter token + userId
@@ -156,7 +156,7 @@ async function createNotification(
       Authorization: `Bearer ${accessToken}`,
     },
     data: {
-      user_id: userId,
+      user: userId,
       channel: channel,
       title: title,
       body: body,
@@ -181,7 +181,7 @@ async function waitForDelivery(
 
   while (Date.now() - startTime < maxWaitMs) {
     const response = await context.request.get(
-      `/items/push_delivery?filter[user_notification_id][_eq]=${notificationId}`,
+      `/items/push_delivery?filter[notification][_eq]=${notificationId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -251,8 +251,8 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
 
       // Verificar detalhes do delivery
       const delivery = deliveries[0]!;
-      expect(delivery.user_notification_id).toBe(notificationIdStr);
-      expect(delivery.push_subscription_id).toBe(subscription.id);
+      expect(delivery.notification).toBe(notificationIdStr);
+      expect(delivery.subscription).toBe(subscription.id);
 
       // O status pode ser 'queued', 'sent', 'delivered' ou 'failed'
       // (failed é esperado porque usamos endpoint fake do FCM)

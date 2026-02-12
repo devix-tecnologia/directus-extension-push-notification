@@ -14,7 +14,7 @@ export interface NotificationPayload {
   id: string;
   title: string;
   body: string;
-  user_id: string;
+  user: string; // Renamed from user_id (M2O relation)
   channel: "push" | "email" | "sms" | "in_app";
   priority?: NotificationPriority;
   action_url?: string;
@@ -24,7 +24,7 @@ export interface NotificationPayload {
 
 export interface SubscriptionRecord {
   id: string;
-  user_id: string;
+  user: string; // Renamed from user_id (M2O relation)
   endpoint: string;
   keys: {
     p256dh: string;

@@ -48,7 +48,7 @@ export default defineEndpoint(
 
       if (subscriptions.length === 0) {
         const subscriptionId = await itemsService.createOne({
-          user_id: user,
+          user: user,
           endpoint: subscription.endpoint,
           keys: subscription.keys,
           user_agent: userAgent,
@@ -72,12 +72,12 @@ export default defineEndpoint(
         return;
       }
 
-      if (sub.user_id != user) {
+      if (sub.user != user) {
         logger.info(
           `[Push Notification] Subscription with endpoint ${subscription.endpoint} already registered on id ${sub.id} but updating user...`,
         );
         await itemsService.updateOne(sub.id, {
-          user_id: user,
+          user: user,
           is_active: true,
           user_agent: userAgent,
           device_name: deviceName || sub.device_name, // Preserva device_name se não fornecido
@@ -146,7 +146,7 @@ export default defineEndpoint(
         return;
       }
 
-      if (sub.user_id != user) {
+      if (sub.user != user) {
         res.status(403).send("Subscription does not belong to current user");
         return;
       }

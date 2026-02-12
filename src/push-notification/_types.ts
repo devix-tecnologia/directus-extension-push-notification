@@ -17,15 +17,15 @@ export interface PushSubscriptionData {
 
 export interface PushSubscription {
   id: string;
-  user_id: string;
+  user: string; // Renamed from user_id (M2O relation)
   endpoint: string;
   keys: PushSubscriptionKeys;
   user_agent?: string;
   device_name?: string;
   is_active: boolean;
-  created_at?: string;
-  last_used_at?: string;
-  expires_at?: string;
+  date_created?: string; // Renamed from created_at
+  date_last_used?: string; // Renamed from last_used_at
+  date_expires?: string; // Renamed from expires_at
   topics?: string[]; // Para broadcast futuro
 }
 
@@ -38,15 +38,15 @@ export interface UserNotification {
   id: string;
   title: string;
   body: string;
-  user_id: string;
+  user: string; // Renamed from user_id (M2O relation)
   channel: NotificationChannel;
   priority: NotificationPriority;
   action_url?: string;
   icon_url?: string;
   data?: Record<string, unknown>;
-  created_by?: string;
-  created_at?: string;
-  expires_at?: string;
+  user_created?: string; // Renamed from created_by
+  date_created?: string; // Renamed from created_at
+  date_expires?: string; // Renamed from expires_at
 }
 
 // === Delivery Types ===
@@ -62,19 +62,19 @@ export type DeliveryStatus =
 
 export interface PushDelivery {
   id: string;
-  user_notification_id: string;
-  push_subscription_id: string;
+  notification: string; // Renamed from user_notification_id (M2O relation)
+  subscription: string; // Renamed from push_subscription_id (M2O relation)
   status: DeliveryStatus;
   attempt_count: number;
   max_attempts: number;
-  queued_at?: string;
-  sent_at?: string;
-  delivered_at?: string;
-  read_at?: string;
-  failed_at?: string;
+  date_queued?: string; // Renamed from queued_at
+  date_sent?: string; // Renamed from sent_at
+  date_delivered?: string; // Renamed from delivered_at
+  date_read?: string; // Renamed from read_at
+  date_failed?: string; // Renamed from failed_at
   error_code?: string;
   error_message?: string;
-  retry_after?: string;
+  date_retry?: string; // Renamed from retry_after
   metadata?: DeliveryMetadata;
 }
 
@@ -93,7 +93,7 @@ export interface RegisterSubscriptionRequest {
 }
 
 export interface SendNotificationRequest {
-  user_id: string;
+  user: string; // Renamed from user_id (M2O relation)
   title: string;
   body: string;
   channel?: NotificationChannel;

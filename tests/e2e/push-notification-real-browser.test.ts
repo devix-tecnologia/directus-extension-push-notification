@@ -64,7 +64,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
 
     // 6. Verificar se subscription foi registrada
     const subscriptionsResponse = await page.request.get(
-      `${DIRECTUS_URL}/items/push_subscription?filter[user_id][_eq]=$CURRENT_USER`,
+      `${DIRECTUS_URL}/items/push_subscription?filter[user][_eq]=$CURRENT_USER`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -178,7 +178,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
 
     // 7. Verificar novamente subscriptions
     const finalSubscriptionsResponse = await page.request.get(
-      `${DIRECTUS_URL}/items/push_subscription?filter[user_id][_eq]=$CURRENT_USER`,
+      `${DIRECTUS_URL}/items/push_subscription?filter[user][_eq]=$CURRENT_USER`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -200,7 +200,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
           Authorization: `Bearer ${authToken}`,
         },
         data: {
-          user_id: "$CURRENT_USER",
+          user: "$CURRENT_USER",
           title: "Teste E2E Real",
           body: `Push notification enviada em ${new Date().toLocaleString("pt-BR")}`,
           channel: "push",
@@ -218,7 +218,7 @@ test.describe("Push Notification E2E Real no Browser", () => {
 
     // 10. Verificar que delivery foi criado
     const deliveriesResponse = await page.request.get(
-      `${DIRECTUS_URL}/items/push_delivery?filter[user_notification_id][_eq]=${notificationData.data.id}`,
+      `${DIRECTUS_URL}/items/push_delivery?filter[notification][_eq]=${notificationData.data.id}`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -233,15 +233,13 @@ test.describe("Push Notification E2E Real no Browser", () => {
 
     const delivery = deliveriesData.data[0];
     console.log(`✅ Delivery status: ${delivery.status}`);
-    console.log(
-      `✅ Delivery subscription_id: ${delivery.push_subscription_id}`,
-    );
+    console.log(`✅ Delivery subscription_id: ${delivery.subscription}`);
 
     // Status pode ser 'sent', 'failed' ou 'delivered'
     expect(["sent", "failed", "delivered"]).toContain(delivery.status);
 
     // 11. Verificar campos do delivery
-    expect(delivery.queued_at).toBeTruthy();
+    expect(delivery.date_queued).toBeTruthy();
     expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
 
     console.log("✅ Teste E2E completo com sucesso!");

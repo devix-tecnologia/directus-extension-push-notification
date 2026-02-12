@@ -47,7 +47,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Test Disabled User",
         body: "Should not create delivery",
         channel: "push",
@@ -84,7 +84,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Error Test",
         body: "Testing error logging",
         channel: "push",
@@ -104,7 +104,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
     expect(delivery?.status).toBe("failed");
     expect(delivery?.error_code).toBeTruthy();
     expect(delivery?.error_message).toBeTruthy();
-    expect(delivery?.failed_at).toBeTruthy();
+    expect(delivery?.date_failed).toBeTruthy();
   });
 
   test("Deve desativar subscription em erro 410 Gone", async () => {
@@ -122,7 +122,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "410 Gone Test",
         body: "Testing 410 Gone handling",
         channel: "push",
@@ -149,7 +149,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
 
     const sub = await getPushSubscription(subscription.id, testSuiteId);
     expect(sub).toHaveProperty("is_active");
-    expect(sub).toHaveProperty("expires_at");
+    expect(sub).toHaveProperty("date_expires");
   });
 
   test("Deve incrementar attempt_count a cada retry", async () => {
@@ -165,9 +165,9 @@ describe("Push Delivery - Tratamento de Erros", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Retry Test",
-        body: "Testing retry_after",
+        body: "Testing date_retry",
         channel: "push",
       },
       testSuiteId,
@@ -184,7 +184,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
     expect(delivery).toBeTruthy();
 
     // Verificar estrutura de retry
-    expect(delivery).toHaveProperty("retry_after");
+    expect(delivery).toHaveProperty("date_retry");
     expect(delivery).toHaveProperty("attempt_count");
     expect(delivery?.attempt_count).toBeGreaterThanOrEqual(1);
   });
@@ -202,7 +202,7 @@ describe("Push Delivery - Tratamento de Erros", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Max Attempts Test",
         body: "Testing max attempts failure",
         channel: "push",

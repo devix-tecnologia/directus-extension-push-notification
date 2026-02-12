@@ -44,7 +44,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Multi-device Notification",
         body: "Testing multiple devices",
         channel: "push",
@@ -59,7 +59,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     expect(deliveries).toHaveLength(3);
     deliveries.forEach((delivery) => {
       expect(delivery.status).toBe("failed");
-      expect(delivery.failed_at).toBeTruthy();
+      expect(delivery.date_failed).toBeTruthy();
     });
   });
 
@@ -98,7 +98,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Test Active Only",
         body: "Should only send to active devices",
         channel: "push",
@@ -114,7 +114,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     expect(deliveries).toHaveLength(2);
     deliveries.forEach((delivery) => {
       expect(delivery.status).toBe("failed");
-      expect(delivery.failed_at).toBeTruthy();
+      expect(delivery.date_failed).toBeTruthy();
     });
   });
 
@@ -137,7 +137,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Device Identification",
         body: "Testing device names",
         channel: "push",
@@ -152,15 +152,13 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     expect(deliveries).toHaveLength(3);
 
     // Verificar que todos os subscription IDs estão presentes
-    const deliverySubscriptionIds = deliveries.map(
-      (d) => d.push_subscription_id,
-    );
+    const deliverySubscriptionIds = deliveries.map((d) => d.subscription);
     createdSubscriptions.forEach((subId) => {
       expect(deliverySubscriptionIds).toContain(subId);
     });
   });
 
-  test("Deve atualizar last_used_at em todos os dispositivos", async () => {
+  test("Deve atualizar date_last_used em todos os dispositivos", async () => {
     const sub1 = await createPushSubscription(
       userId,
       {
@@ -182,16 +180,16 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     );
 
     // Timestamps originais para referência (não utilizados no teste)
-    // const _original1 = sub1.last_used_at;
-    // const _original2 = sub2.last_used_at;
+    // const _original1 = sub1.date_last_used;
+    // const _original2 = sub2.date_last_used;
 
     await wait(100);
 
     await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Update Timestamp",
-        body: "Testing last_used_at update",
+        body: "Testing date_last_used update",
         channel: "push",
       },
       testSuiteId,
@@ -201,13 +199,13 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     const updatedSub1 = await getPushSubscription(sub1.id, testSuiteId);
     const updatedSub2 = await getPushSubscription(sub2.id, testSuiteId);
 
-    // Ambas subscriptions devem ter last_used_at atualizado
-    expect(updatedSub1.last_used_at).toBeTruthy();
-    expect(updatedSub2.last_used_at).toBeTruthy();
+    // Ambas subscriptions devem ter date_last_used atualizado
+    expect(updatedSub1.date_last_used).toBeTruthy();
+    expect(updatedSub2.date_last_used).toBeTruthy();
 
     // Verificar que foi atualizado recentemente
-    expect(new Date(updatedSub1.last_used_at!).getTime()).toBeGreaterThan(0);
-    expect(new Date(updatedSub2.last_used_at!).getTime()).toBeGreaterThan(0);
+    expect(new Date(updatedSub1.date_last_used!).getTime()).toBeGreaterThan(0);
+    expect(new Date(updatedSub2.date_last_used!).getTime()).toBeGreaterThan(0);
   });
 
   test("Deve lidar com falha parcial em múltiplos dispositivos", async () => {
@@ -246,7 +244,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
 
     const notification = await createUserNotification(
       {
-        user_id: userId,
+        user: userId,
         title: "Partial Failure Test",
         body: "Testing handling of partial failures",
         channel: "push",
@@ -273,7 +271,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       expect(delivery.status).toBe("failed");
       expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
       expect(delivery.max_attempts).toBeGreaterThanOrEqual(1);
-      expect(delivery.failed_at).toBeTruthy();
+      expect(delivery.date_failed).toBeTruthy();
     });
   });
 });

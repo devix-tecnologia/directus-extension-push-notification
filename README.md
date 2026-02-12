@@ -167,7 +167,7 @@ curl -X POST https://your-directus.com/items/user_notification \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "user_id": "user-uuid-here",
+    "user": "user-uuid-here",
     "channel": "push",
     "title": "Hello!",
     "body": "Your first notification"
