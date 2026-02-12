@@ -29,6 +29,7 @@ node scripts/generate-test-vapid-keys.js
 ### Output
 
 Creates `.env.test` with:
+
 ```env
 # Auto-generated VAPID keys for testing
 # Generated at: 2026-02-11T10:30:00.000Z

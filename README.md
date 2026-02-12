@@ -483,6 +483,7 @@ Interested in contributing? Check out our [Contributing Guide](CONTRIBUTING.md) 
 ### Running Tests
 
 **E2E Tests (Playwright):**
+
 ```bash
 # Run all E2E tests (auto-generates VAPID keys, builds, and runs tests)
 pnpm test:e2e
@@ -495,6 +496,7 @@ pnpm test:e2e:debug
 ```
 
 **Integration Tests (Vitest):**
+
 ```bash
 # Generate VAPID keys first (one time)
 pnpm generate:vapid
@@ -504,6 +506,7 @@ pnpm test:integration:ci
 ```
 
 The test commands automatically:
+
 1. Generate fresh VAPID keys (`.env.test` file)
 2. Build the extension
 3. Start Docker containers with test keys

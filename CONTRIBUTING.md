@@ -395,6 +395,71 @@ docker logs directus-push-notification-hook-11-13-4-11.13.4
 
 ## 🏛️ Architecture Reference
 
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    directus_users ||--o{ push_subscription : "owns"
+    directus_users ||--o{ user_notification : "receives"
+    directus_users ||--o{ user_notification : "creates"
+    user_notification ||--o{ push_delivery : "has"
+    push_subscription ||--o{ push_delivery : "delivers_to"
+
+    directus_users {
+        uuid id PK
+        boolean push_enabled "default: true"
+        string email
+        string first_name
+        string last_name
+    }
+
+    push_subscription {
+        uuid id PK
+        uuid user_id FK "→ directus_users"
+        text endpoint "unique, push endpoint URL"
+        json keys "p256dh and auth keys"
+        string user_agent "browser identification"
+        string device_name "optional friendly name"
+        boolean is_active "default: true"
+        timestamp created_at
+        timestamp last_used_at
+        timestamp expires_at
+    }
+
+    user_notification {
+        uuid id PK
+        string title "required"
+        text body "required"
+        uuid user_id FK "→ directus_users (recipient)"
+        enum channel "push/email/sms/in_app"
+        enum priority "low/normal/high/urgent"
+        string action_url "URL to open on click"
+        string icon_url "custom notification icon"
+        json data "additional app data"
+        uuid created_by FK "→ directus_users (creator)"
+        timestamp created_at
+        timestamp expires_at
+    }
+
+    push_delivery {
+        uuid id PK
+        uuid user_notification_id FK "→ user_notification"
+        uuid push_subscription_id FK "→ push_subscription"
+        enum status "queued/sending/sent/delivered/read/failed/expired"
+        integer attempt_count "default: 0"
+        integer max_attempts "default: 3"
+        timestamp queued_at
+        timestamp sent_at
+        timestamp delivered_at "Service Worker callback"
+        timestamp read_at "User interaction"
+        timestamp failed_at
+        string error_code "e.g., 410, INVALID_SUBSCRIPTION"
+        text error_message
+        timestamp retry_after "for transient failures"
+        json metadata "additional delivery info"
+    }
+```
+
 ### Collections Schema
 
 This section provides detailed technical specifications for developers.
