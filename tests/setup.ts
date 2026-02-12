@@ -43,7 +43,7 @@ export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
     logger.info("Starting Docker Compose...");
     const composeCmd = await getDockerComposeCommand();
     const { stdout, stderr } = await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.15.1"} ${composeCmd} -f docker-compose.test.yml up -d directus`,
+      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.15.1"} ${composeCmd} --env-file .env.test -f docker-compose.test.yml up -d directus`,
     );
 
     if (stderr) logger.warn(`Docker Compose stderr: ${stderr}`);
@@ -77,7 +77,7 @@ export async function teardownTestEnvironment(
   try {
     const composeCmd = await getDockerComposeCommand();
     await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} ${composeCmd} -f docker-compose.test.yml down -v`,
+      `TEST_SUITE_ID=${testSuiteId} ${composeCmd} --env-file .env.test -f docker-compose.test.yml down -v`,
     );
     logger.info("✓ Test environment teardown complete");
   } catch (error) {
@@ -147,7 +147,7 @@ async function waitForDirectus(
           "/auth/login",
           {
             email: "admin@example.com",
-            password: "admin123",
+            password: "test-password-ci-only",
           },
           undefined,
           testSuiteId,
@@ -173,7 +173,7 @@ async function getAccessToken(testSuiteId: string): Promise<string> {
   const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
 
   const { stdout } = await execAsync(
-    `docker exec ${containerName} wget -qO- --post-data='{"email":"admin@example.com","password":"admin123"}' --header='Content-Type:application/json' http://127.0.0.1:8055/auth/login`,
+    `docker exec ${containerName} wget -qO- --post-data='{"email":"admin@example.com","password":"test-password-ci-only"}' --header='Content-Type:application/json' http://127.0.0.1:8055/auth/login`,
   );
 
   const response = JSON.parse(stdout);

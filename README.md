@@ -34,13 +34,13 @@
 
 **⚠️ IMPORTANT:** This project uses VAPID keys for push notifications.
 
-**DO NOT** use the example VAPID keys from docker-compose files in production! Those keys are public and shared in documentation.
-
 Always generate your own unique keys:
 
 ```bash
 npx web-push generate-vapid-keys
 ```
+
+**Keep your `VAPID_PRIVATE_KEY` secret!** Never commit it to Git or share it publicly.
 
 See [SECURITY.md](SECURITY.md) for complete security guidelines.
 
@@ -479,6 +479,38 @@ Interested in contributing? Check out our [Contributing Guide](CONTRIBUTING.md) 
 - Testing instructions (E2E with Playwright)
 - Code standards and linting
 - Release process
+
+### Running Tests
+
+**E2E Tests (Playwright):**
+```bash
+# Run all E2E tests (auto-generates VAPID keys, builds, and runs tests)
+pnpm test:e2e
+
+# Run with UI
+pnpm test:e2e:ui
+
+# Debug mode
+pnpm test:e2e:debug
+```
+
+**Integration Tests (Vitest):**
+```bash
+# Generate VAPID keys first (one time)
+pnpm generate:vapid
+
+# Run integration tests
+pnpm test:integration:ci
+```
+
+The test commands automatically:
+1. Generate fresh VAPID keys (`.env.test` file)
+2. Build the extension
+3. Start Docker containers with test keys
+4. Run tests
+5. Clean up containers
+
+**Note:** The `.env.test` file is auto-generated and git-ignored. Never commit VAPID keys!
 
 ## 📄 License
 

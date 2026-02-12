@@ -13,7 +13,7 @@ import { test, expect } from "@playwright/test";
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
 const DIRECTUS_EMAIL = "admin@example.com";
-const DIRECTUS_PASSWORD = "admin123";
+const DIRECTUS_PASSWORD = "test-password-ci-only";
 
 test.describe("Push Notification E2E Real no Browser", () => {
   test("deve registrar subscription real e criar delivery ao enviar notificação", async ({

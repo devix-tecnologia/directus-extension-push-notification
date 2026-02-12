@@ -30,12 +30,13 @@ services:
       ACCEPT_TERMS: "true"
       PROJECT_OWNER: "admin@example.com"
 
-      # ⚠️⚠️⚠️ NEVER REUSE THESE EXAMPLE VAPID KEYS IN PRODUCTION ⚠️⚠️⚠️
-      # These keys are PUBLIC and shared in documentation.
-      # Using them in production means ANYONE can send fake notifications to your users!
+      # 🔑 VAPID KEYS - REQUIRED FOR PUSH NOTIFICATIONS
       # Generate your own unique keys: npx web-push generate-vapid-keys
-      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o}"
-      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk}"
+      # Then set them in your .env file or environment:
+      #   VAPID_PUBLIC_KEY=your_public_key_here
+      #   VAPID_PRIVATE_KEY=your_private_key_here
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY}"
 
       # VAPID Subject (opcional) - identificação do servidor de push
       # Em produção, use: VAPID_SUBJECT: "https://seusite.com" ou "mailto:contato@seusite.com"

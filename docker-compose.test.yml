@@ -20,10 +20,11 @@ services:
       ACCEPT_TERMS: "true"
       PROJECT_OWNER: "admin@example.com"
 
-      # ⚠️ TEST VAPID KEYS - DO NOT USE IN REAL ENVIRONMENTS
-      # These keys are for automated testing only
-      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-BPT864f6ph9vkIXmyWJFsehe-Bb9iul4IiNoRN3To0UrixxFKKKsKGM4FUBF_vtjSAoFWxBDY9-4pdCCIMJwz7o}"
-      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-xJQ5l1xcpN79nKn5x1ufvuo0kGIuWGF5bPQDuiJKwlk}"
+      # VAPID keys must be provided via environment variables
+      # In CI/CD: Generated dynamically before running tests
+      # Locally: Set in .env file (see .env.docker.example)
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY}"
 
       # Melhorar performance de inicialização
       LOG_LEVEL: "warn"

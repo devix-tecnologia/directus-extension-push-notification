@@ -12,7 +12,7 @@ import { test, expect, type BrowserContext } from "@playwright/test";
 
 const BASE_URL = process.env.TEST_URL || "http://localhost:8055";
 const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_PASSWORD = "test-password-ci-only";
 
 // Configuração do contexto
 test.use({

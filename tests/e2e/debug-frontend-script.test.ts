@@ -81,7 +81,7 @@ test.describe("Push Notification E2E Real", () => {
     // Fazer login
     console.log("\n=== Fazendo login ===");
     await page.fill('input[type="email"]', "admin@example.com");
-    await page.fill('input[type="password"]', "admin123");
+    await page.fill('input[type="password"]', "test-password-ci-only");
     await page.click('button[type="submit"]');
 
     // Aguardar navegação após login

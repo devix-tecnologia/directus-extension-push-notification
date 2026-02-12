@@ -10,6 +10,10 @@ module.exports = defineConfig({
   /* Timeout para cada teste (3 minutos) */
   timeout: 180000,
 
+  /* Global setup and teardown */
+  globalSetup: require.resolve("./tests/global-setup.ts"),
+  globalTeardown: require.resolve("./tests/global-teardown.ts"),
+
   /* Run tests in files in parallel */
   fullyParallel: true,
 

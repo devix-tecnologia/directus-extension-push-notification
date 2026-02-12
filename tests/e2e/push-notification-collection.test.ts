@@ -5,7 +5,7 @@ import fs from "fs";
  * Credenciais de admin padrão do ambiente de teste
  */
 const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_PASSWORD = "test-password-ci-only";
 
 // Use path relativo ao workspace
 const storageFile = `${process.cwd()}/tests/e2e/auth-storage.json`;
