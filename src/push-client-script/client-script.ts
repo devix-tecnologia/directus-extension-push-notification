@@ -252,10 +252,29 @@ export function getClientScript(
     const startTime = Date.now();
     
     return new Promise(function(resolve) {
-      function check() {
+      async function check() {
         if (Date.now() - startTime > maxWait) {
+          log('Timeout aguardando autenticação');
           resolve(false);
           return;
+        }
+        
+        // Verifica se o usuário está autenticado tentando buscar /users/me
+        try {
+          const response = await fetch(PUBLIC_URL + '/users/me?fields=id', {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            log('Usuário autenticado detectado!');
+            resolve(true);
+            return;
+          }
+        } catch (e) {
+          // Ignora erros e continua tentando
         }
         
         setTimeout(check, 500);
