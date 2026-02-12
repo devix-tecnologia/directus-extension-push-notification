@@ -8,11 +8,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Directus](https://img.shields.io/badge/Directus-10.1.7+-6644FF)](https://directus.io)
 
+> ⚠️ **BETA VERSION WARNING**  
+> This extension is currently in **BETA**. While stable for testing and development, it's highly recommended to **backup your database** before installing or updating to any beta version. Breaking changes may occur between beta releases.
+
 [Installation](#-installation) • [Quick Start](#-quick-start) • [FAQ](#-frequently-asked-questions) • [API Docs](#-api-endpoints) • [Troubleshooting](#-troubleshooting)
 
 </div>
 
 ---
+
+![Subscription](https://raw.githubusercontent.com/devix-tecnologia/directus-extension-push-notification/main/docs/push-subscription.png)
 
 ## ✨ Features
 
