@@ -18,16 +18,30 @@ export default defineHook(
       let fieldsCreated = 0;
       let relationsCreated = 0;
 
-      if (directusState.collections) {
+      const collections = directusState.collections
+        ? Array.isArray(directusState.collections)
+          ? directusState.collections
+          : [directusState.collections]
+        : [];
+      const fields = directusState.fields
+        ? Array.isArray(directusState.fields)
+          ? directusState.fields
+          : [directusState.fields]
+        : [];
+      const relations = directusState.relations
+        ? Array.isArray(directusState.relations)
+          ? directusState.relations
+          : [directusState.relations]
+        : [];
+
+      // STEP 1: Create collections WITH their fields in a single call
+      // This prevents Directus from auto-creating a basic 'id' field
+      if (collections.length > 0) {
         const collectionsService = new CollectionsService({
           knex: database,
           schema: await getSchema(),
         });
-        const collections = (
-          Array.isArray(directusState.collections)
-            ? directusState.collections
-            : [directusState.collections]
-        ) as Array<{ collection: string }>;
+
         for (const collection of collections) {
           try {
             await collectionsService.readOne(collection.collection);
@@ -46,32 +60,65 @@ export default defineHook(
               throw e;
             }
 
-            logger.debug(
-              `[DB Configuration] Creating collection '${collection.collection}'`,
+            // Get all fields for this collection
+            const collectionFields = fields.filter(
+              (f: any) => f.collection === collection.collection,
             );
-            await collectionsService.createOne(collection);
-            collectionsCreated++;
+
             logger.debug(
-              `[DB Configuration] Collection '${collection.collection}' created successfully`,
+              `[DB Configuration] Creating collection '${collection.collection}' with ${collectionFields.length} field(s)`,
+            );
+
+            // Create collection WITH fields - prevents auto-creation of basic id field
+            await collectionsService.createOne({
+              collection: collection.collection,
+              meta: collection.meta,
+              schema: collection.schema || null,
+              fields: collectionFields.map((field: any) => {
+                const fieldData: any = {
+                  field: field.field,
+                  type: field.type,
+                  meta: field.meta,
+                };
+
+                // Only add schema if not null (alias fields don't have schema)
+                if (field.schema !== null && field.schema !== undefined) {
+                  fieldData.schema = field.schema;
+                }
+
+                return fieldData;
+              }),
+            });
+
+            collectionsCreated++;
+            fieldsCreated += collectionFields.length;
+
+            logger.debug(
+              `[DB Configuration] Collection '${collection.collection}' created successfully with ${collectionFields.length} field(s)`,
             );
           }
         }
 
         if (collectionsCreated > 0) {
           logger.info(
-            `[DB Configuration] Created ${collectionsCreated} collection(s)`,
+            `[DB Configuration] Created ${collectionsCreated} collection(s) with ${fieldsCreated} field(s)`,
           );
         }
       }
 
-      if (directusState.fields) {
+      // STEP 2: Add any missing fields to existing collections
+      // This handles cases where collections existed but fields were added later
+      if (fields.length > 0) {
+        // Refresh schema after collections creation
+        const updatedSchema = await getSchema({ database: database });
+
         const fieldsService = new FieldsService({
           knex: database,
-          schema: await getSchema({ database: database }),
+          schema: updatedSchema,
         });
-        const fields = Array.isArray(directusState.fields)
-          ? directusState.fields
-          : [directusState.fields];
+
+        let additionalFieldsCreated = 0;
+
         for (const field of fields) {
           try {
             await fieldsService.readOne(field.collection, field.field);
@@ -93,29 +140,43 @@ export default defineHook(
             logger.debug(
               `[DB Configuration] Creating field '${field.field}' in collection '${field.collection}'`,
             );
-            await fieldsService.createField(field.collection, field);
-            fieldsCreated++;
+
+            const fieldData: any = {
+              field: field.field,
+              type: field.type,
+              meta: field.meta,
+            };
+
+            if (field.schema !== null && field.schema !== undefined) {
+              fieldData.schema = field.schema;
+            }
+
+            await fieldsService.createField(field.collection, fieldData);
+            additionalFieldsCreated++;
+
             logger.debug(
               `[DB Configuration] Field '${field.field}' created successfully`,
             );
           }
         }
 
-        if (fieldsCreated > 0) {
-          logger.info(`[DB Configuration] Created ${fieldsCreated} field(s)`);
+        if (additionalFieldsCreated > 0) {
+          logger.info(
+            `[DB Configuration] Added ${additionalFieldsCreated} additional field(s)`,
+          );
         }
       }
 
-      if (directusState.relations) {
+      // STEP 3: Create relations
+      if (relations.length > 0) {
+        // Refresh schema again before relations
+        const updatedSchema = await getSchema({ database: database });
+
         const relationsService = new RelationsService({
           knex: database,
-          schema: await getSchema({ database: database }),
+          schema: updatedSchema,
         });
-        const relations = (
-          Array.isArray(directusState.relations)
-            ? directusState.relations
-            : [directusState.relations]
-        ) as Array<{ collection: string; field: string }>;
+
         for (const relation of relations) {
           try {
             logger.debug(
@@ -164,6 +225,16 @@ export default defineHook(
       } else {
         logger.debug(
           "[DB Configuration] No changes needed - schema up to date",
+        );
+      }
+
+      // Force schema refresh
+      try {
+        await getSchema({ database: database });
+        logger.debug("[DB Configuration] Schema refreshed");
+      } catch (error: any) {
+        logger.warn(
+          `[DB Configuration] Error refreshing schema: ${error.message}`,
         );
       }
     });

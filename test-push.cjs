@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const webpush = require("web-push");
 require("dotenv").config();
 
@@ -48,5 +49,6 @@ webpush
     if (error.body) {
       console.error(`   Detalhes: ${error.body}`);
     }
+
     process.exit(1);
   });

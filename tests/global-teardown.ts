@@ -3,7 +3,7 @@
  * Para o ambiente Docker após todos os testes E2E
  */
 
-import { teardownTestEnvironment } from "./setup";
+import { teardownTestEnvironment } from "./setup.js";
 
 export default async function globalTeardown() {
   const testSuiteId = process.env.TEST_SUITE_ID || "e2e-main";

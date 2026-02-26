@@ -1,17 +1,17 @@
 services:
   directus:
-    image: directus/directus:${DIRECTUS_VERSION:-11.15.1}
+    image: directus/directus:${DIRECTUS_VERSION:-11.14.1}
     container_name: directus-push-notification-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}
+    ports:
+      - "0:8055" # Porta dinâmica - Docker escolhe porta livre automaticamente
     environment:
       DB_CLIENT: "sqlite3"
       DB_FILENAME: "/tmp/data/directus.db"
-      # ⚠️ TEST ENVIRONMENT ONLY - Deterministic keys for CI/CD reproducibility
-      # These credentials are ONLY for automated testing, NOT for production use
-      KEY: "test-key-for-ci-only"
-      SECRET: "test-secret-for-ci-only-abcdef1234567890abcdef1234567890"
+      KEY: "test-key"
+      SECRET: "test-secret"
       ADMIN_EMAIL: "admin@example.com"
-      ADMIN_PASSWORD: "test-password-ci-only"
-      PUBLIC_URL: "https://directus:8055"
+      ADMIN_PASSWORD: "admin123"
+      PUBLIC_URL: "http://directus:8055"
       STORAGE_LOCAL_ROOT: "/directus/uploads"
       EXTENSIONS_PATH: "./extensions"
       EXTENSIONS_AUTO_RELOAD: "true"
@@ -19,12 +19,14 @@ services:
       CACHE_ENABLED: "false"
       ACCEPT_TERMS: "true"
       PROJECT_OWNER: "admin@example.com"
+      PRESSURE_LIMITER_ENABLED: "false"
 
       # VAPID keys must be provided via environment variables
       # In CI/CD: Generated dynamically before running tests
       # Locally: Set in .env file (see .env.docker.example)
-      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY}"
-      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY}"
+      PUSH_PUBLIC_VAPID_KEY: "${PUSH_PUBLIC_VAPID_KEY}"
+      PUSH_PRIVATE_VAPID_KEY: "${PUSH_PRIVATE_VAPID_KEY}"
+      PUSH_VAPID_SUBJECT: "${PUSH_VAPID_SUBJECT:-mailto:test@example.com}"
 
       # Melhorar performance de inicialização
       LOG_LEVEL: "warn"
@@ -37,24 +39,21 @@ services:
       - ./dist/directus-state.json:/directus/extensions/directus-extension-push-notification/dist/directus-state.json:ro
       - ./dist/service-worker.js:/directus/extensions/directus-extension-push-notification/dist/service-worker.js:ro
     tmpfs:
-      - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777
-      - /tmp/data:rw,size=64M,mode=777
+      - /directus/uploads:rw,noexec,nosuid,size=64M,mode=777 # Usa memória temporária para uploads com permissões adequadas
+      - /tmp/data:rw,size=64M,mode=777 # Usa memória temporária para o banco de dados
     networks:
-      - directus-test-network
+      - push-notification-directus-test-network
     healthcheck:
       test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://0.0.0.0:8055/server/health",
-        ]
+        - CMD
+        - sh
+        - -c
+        - |
+          wget --no-verbose --tries=1 --spider http://0.0.0.0:8055/server/health
       interval: 5s
-      timeout: 5s
-      retries: 60
-      start_period: 120s
+      timeout: 10s
+      retries: 50
+      start_period: 60s
 
   tests:
     image: mcr.microsoft.com/playwright:v1.57.0
@@ -70,7 +69,7 @@ services:
       - ./:/workspace:rw
       - /dev/shm:/dev/shm
     networks:
-      - directus-test-network
+      - push-notification-directus-test-network
     command:
       - bash
       - -lc
@@ -81,6 +80,6 @@ services:
         pnpm test:e2e
 
 networks:
-  directus-test-network:
-    name: directus-test-network-${TEST_SUITE_ID:-main}
+  push-notification-directus-test-network:
     driver: bridge
+    name: directus-push-notification-test-${TEST_SUITE_ID:-main}-${DIRECTUS_VERSION:-latest}

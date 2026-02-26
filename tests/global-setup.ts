@@ -3,7 +3,7 @@
  * Inicia o ambiente Docker antes de todos os testes E2E
  */
 
-import { setupTestEnvironment } from "./setup";
+import { setupTestEnvironment } from "./setup.js";
 
 export default async function globalSetup() {
   const testSuiteId = process.env.TEST_SUITE_ID || "e2e-main";
