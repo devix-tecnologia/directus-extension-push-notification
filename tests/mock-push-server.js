@@ -1,16 +1,45 @@
 /**
  * Mock Web Push Server
  * Simula um servidor Web Push (FCM/Autopush) para testes
- * Aceita requisições HTTP POST e retorna 201 (Created)
+ * Aceita requisições HTTPS POST e retorna 201 (Created)
+ *
+ * Usa HTTPS pois web-push sempre chama https.request(), mesmo para http:// endpoints.
+ * Gera um certificado autoassinado com openssl na primeira execução.
  */
 
+const https = require("https");
 const http = require("http");
 const crypto = require("crypto");
+const { execSync } = require("child_process");
+const fs = require("fs");
 
 const PORT = 8080;
 const subscriptions = new Map();
 
-const server = http.createServer((req, res) => {
+// Gerar certificado autoassinado se não existir
+const KEY_PATH = "/tmp/mock-push-key.pem";
+const CERT_PATH = "/tmp/mock-push-cert.pem";
+
+if (!fs.existsSync(KEY_PATH) || !fs.existsSync(CERT_PATH)) {
+  console.log("[MOCK-PUSH] Generating self-signed TLS certificate...");
+  execSync(
+    `openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout ${KEY_PATH} -out ${CERT_PATH} \
+      -subj "/CN=mock-push-server"`,
+    { stdio: "pipe" },
+  );
+  console.log("[MOCK-PUSH] Certificate generated.");
+}
+
+const tlsOptions = {
+  key: fs.readFileSync(KEY_PATH),
+  cert: fs.readFileSync(CERT_PATH),
+};
+
+/** Armazena as mensagens recebidas para verificação nos testes */
+const receivedMessages = [];
+
+const server = https.createServer(tlsOptions, (req, res) => {
   // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -25,6 +54,32 @@ const server = http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  // List received messages (for test assertions)
+  if (req.method === "GET" && req.url === "/messages") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ messages: receivedMessages }));
+    return;
+  }
+
+  // List messages for specific subscription
+  if (req.method === "GET" && req.url.startsWith("/messages/")) {
+    const subscriptionId = req.url.split("/messages/")[1];
+    const filtered = receivedMessages.filter(
+      (m) => m.subscriptionId === subscriptionId,
+    );
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ messages: filtered }));
+    return;
+  }
+
+  // Clear all messages (reset between tests)
+  if (req.method === "DELETE" && req.url === "/messages") {
+    receivedMessages.splice(0, receivedMessages.length);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
     return;
   }
 
@@ -79,6 +134,14 @@ const server = http.createServer((req, res) => {
       console.log(`[MOCK-PUSH] Received notification for ${subscriptionId}`);
       console.log(`[MOCK-PUSH] Headers:`, JSON.stringify(headers, null, 2));
       console.log(`[MOCK-PUSH] Body length: ${body.length} bytes`);
+
+      // Armazenar mensagem recebida para verificação nos testes
+      receivedMessages.push({
+        subscriptionId,
+        receivedAt: new Date().toISOString(),
+        bodyLength: body.length,
+        headers,
+      });
 
       // Simular diferentes respostas baseado no subscriptionId
       if (subscriptionId.includes("error-410")) {
@@ -142,12 +205,12 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[MOCK-PUSH] Server listening on port ${PORT}`);
+  console.log(`[MOCK-PUSH] HTTPS Server listening on port ${PORT}`);
   console.log(
-    `[MOCK-PUSH] Health check: http://localhost:${PORT}/__heartbeat__`,
+    `[MOCK-PUSH] Health check: https://localhost:${PORT}/__heartbeat__`,
   );
   console.log(
-    `[MOCK-PUSH] Push endpoint: http://localhost:${PORT}/push/{subscriptionId}`,
+    `[MOCK-PUSH] Push endpoint: https://localhost:${PORT}/push/{subscriptionId}`,
   );
 });
 

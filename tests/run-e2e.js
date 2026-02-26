@@ -12,6 +12,7 @@ const VERBOSE =
 const TEST_SUITE_ID = process.env.TEST_SUITE_ID || "main";
 const DIRECTUS_VERSION = process.env.DIRECTUS_VERSION || "11.14.1";
 const CONTAINER_NAME = `directus-push-notification-${TEST_SUITE_ID}-${DIRECTUS_VERSION}`;
+const MOCK_CONTAINER_NAME = `directus-push-notification-mock-${TEST_SUITE_ID}-${DIRECTUS_VERSION}`;
 
 function log(message) {
   if (VERBOSE) {
@@ -85,6 +86,16 @@ async function getContainerPort() {
     return match ? match[1] : "8055";
   } catch {
     return "8055";
+  }
+}
+
+async function getMockServerPort() {
+  try {
+    const { stdout } = await execAsync(`docker port ${MOCK_CONTAINER_NAME} 8080`);
+    const match = stdout.trim().match(/:([0-9]+)$/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
   }
 }
 
@@ -184,11 +195,11 @@ async function startContainer(composeCmd) {
 
   try {
     await execAsync(
-      `${vapidVars} ${composeCmd} -f docker-compose.test.yml up -d directus`,
+      `${vapidVars} ${composeCmd} -f docker-compose.test.yml up -d directus mock-push-server`,
     );
-    log("Container iniciado com sucesso ✓");
+    log("Containers iniciados com sucesso ✓");
   } catch (error) {
-    logError(`Falha ao iniciar container: ${error.message}`);
+    logError(`Falha ao iniciar containers: ${error.message}`);
     throw error;
   }
 }
@@ -199,7 +210,19 @@ async function runTests(port) {
   const directusUrl = `http://localhost:${port}`;
   log(`Directus URL: ${directusUrl}`);
 
-  const testCommand = `DIRECTUS_URL=${directusUrl} playwright test ${process.argv.slice(2).join(" ")}`;
+  const mockPort = await getMockServerPort();
+  const mockServerUrl = mockPort ? `https://localhost:${mockPort}` : "";
+  const mockEndpointBase = mockPort ? `https://mock-push-server:8080` : "";
+  if (mockPort) {
+    log(`Mock Push Server URL: ${mockServerUrl}`);
+    log(`Mock Push Endpoint Base (interno): ${mockEndpointBase}`);
+  }
+
+  const mockEnv = mockPort
+    ? ` MOCK_PUSH_SERVER_URL=${mockServerUrl} MOCK_PUSH_ENDPOINT_BASE=${mockEndpointBase}`
+    : "";
+
+  const testCommand = `DIRECTUS_URL=${directusUrl}${mockEnv} playwright test ${process.argv.slice(2).join(" ")}`;
 
   return new Promise((resolve, reject) => {
     const child = exec(testCommand);
@@ -246,6 +269,16 @@ async function main() {
     // 4. Aguardar ficar healthy
     if (!(await waitForHealthy())) {
       process.exit(1);
+    }
+
+    // 4b. Aguardar mock-push-server (opcional, não bloqueia)
+    try {
+      const mockPort = await getMockServerPort();
+      if (mockPort) {
+        log("Mock push server iniciado ✓");
+      }
+    } catch {
+      log("Mock push server não disponível (testes de confirmação serão ignorados)");
     }
 
     // 5. Obter porta do container
