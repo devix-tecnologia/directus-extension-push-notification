@@ -13,11 +13,13 @@ export default defineEndpoint(
     const { ItemsService } = services;
 
     webPush.setVapidDetails(
-      env.PUBLIC_URL?.startsWith("http://")
-        ? "mailto:admin@example.com"
-        : env.PUBLIC_URL || "mailto:admin@example.com",
-      env.VAPID_PUBLIC_KEY,
-      env.VAPID_PRIVATE_KEY,
+      env.PUSH_VAPID_SUBJECT
+        ? env.PUSH_VAPID_SUBJECT
+        : env.PUBLIC_URL?.startsWith("http://")
+          ? "mailto:admin@example.com"
+          : env.PUBLIC_URL || "mailto:admin@example.com",
+      env.PUSH_PUBLIC_VAPID_KEY,
+      env.PUSH_PRIVATE_VAPID_KEY,
     );
 
     router.post("/register", async (req, res) => {

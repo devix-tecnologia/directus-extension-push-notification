@@ -41,8 +41,9 @@ try {
 # Generated at: ${new Date().toISOString()}
 # ⚠️ DO NOT use these keys in production!
 
-VAPID_PUBLIC_KEY=${publicKey}
-VAPID_PRIVATE_KEY=${privateKey}
+PUSH_PUBLIC_VAPID_KEY=${publicKey}
+PUSH_PRIVATE_VAPID_KEY=${privateKey}
+PUSH_VAPID_SUBJECT=mailto:test@example.com
 `;
 
   // Write to .env.test file
@@ -50,8 +51,8 @@ VAPID_PRIVATE_KEY=${privateKey}
   writeFileSync(envPath, envContent);
 
   console.log("✅ VAPID keys generated successfully!\n");
-  console.log(`   VAPID_PUBLIC_KEY=${publicKey.substring(0, 20)}...`);
-  console.log(`   VAPID_PRIVATE_KEY=${privateKey.substring(0, 20)}...`);
+  console.log(`   PUSH_PUBLIC_VAPID_KEY=${publicKey.substring(0, 20)}...`);
+  console.log(`   PUSH_PRIVATE_VAPID_KEY=${privateKey.substring(0, 20)}...`);
   console.log(`\n📝 Keys saved to: .env.test`);
   console.log("\n📋 To use with docker-compose:");
   console.log(

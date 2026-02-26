@@ -2,8 +2,7 @@ import { test, expect } from "@playwright/test";
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
 const DIRECTUS_EMAIL = process.env.DIRECTUS_EMAIL || "admin@example.com";
-const DIRECTUS_PASSWORD =
-  process.env.DIRECTUS_PASSWORD || "test-password-ci-only";
+const DIRECTUS_PASSWORD = process.env.DIRECTUS_PASSWORD || "admin123";
 
 test.describe("Push Notification - Frontend Integration", () => {
   let authToken: string;
@@ -68,16 +67,29 @@ test.describe("Push Notification - Frontend Integration", () => {
     await page.waitForURL(/\/admin/, { timeout: 10000 });
 
     // Verificar se o script de push notification foi injetado
-    const scriptContent = await page.evaluate(() => {
+    // O hook injeta <script src="/push-client-script/client.js"> (script externo)
+    const scriptSrcFound = await page.evaluate(() => {
       const scripts = Array.from(document.querySelectorAll("script"));
-      const pushScript = scripts.find(
+      // Verificar script externo via src
+      const externalScript = scripts.find(
+        (s) => s.src && s.src.includes("/push-client-script/client.js"),
+      );
+      if (externalScript) return externalScript.src;
+      // Fallback: script inline
+      const inlineScript = scripts.find(
         (s) => s.textContent && s.textContent.includes("[PushNotification]"),
       );
-
-      return pushScript?.textContent || null;
+      return inlineScript?.textContent || null;
     });
 
-    expect(scriptContent).toBeTruthy();
+    expect(scriptSrcFound).toBeTruthy();
+
+    // Buscar o conteúdo do script externo para verificar as variáveis
+    const scriptResponse = await page.request.get(
+      `${DIRECTUS_URL}/push-client-script/client.js`,
+    );
+    expect(scriptResponse.ok()).toBeTruthy();
+    const scriptContent = await scriptResponse.text();
     expect(scriptContent).toContain("initPushNotification");
     expect(scriptContent).toContain("VAPID_PUBLIC_KEY");
   });

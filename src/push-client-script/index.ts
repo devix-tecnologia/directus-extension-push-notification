@@ -13,7 +13,7 @@ export default defineEndpoint((router, { env, logger }) => {
     logger.debug("[Push Client Script] Serving client script");
 
     try {
-      const vapidPublicKey = env["VAPID_PUBLIC_KEY"] || "";
+      const vapidPublicKey = env["PUSH_PUBLIC_VAPID_KEY"] || "";
       const publicUrl = env["PUBLIC_URL"] || "";
 
       const clientScript = getClientScript(vapidPublicKey, publicUrl);

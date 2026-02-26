@@ -66,7 +66,7 @@ export default defineHook(({ filter, action }, { services, logger }) => {
       // Configurar VAPID keys (precisa ser feito aqui pois env não está disponível no escopo externo)
       const env = process.env;
 
-      if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+      if (!env.PUSH_PUBLIC_VAPID_KEY || !env.PUSH_PRIVATE_VAPID_KEY) {
         logger.error("[Notification Trigger] VAPID keys not configured", {
           notification_id: notification.id,
         });
@@ -75,15 +75,15 @@ export default defineHook(({ filter, action }, { services, logger }) => {
 
       // VAPID subject (identificação do servidor de push)
       // Pode ser: https://seusite.com ou mailto:contato@seusite.com
-      // Prioridade: VAPID_SUBJECT > PUBLIC_URL > fallback
+      // Prioridade: PUSH_VAPID_SUBJECT > PUBLIC_URL > fallback
       let vapidSubject =
-        env.VAPID_SUBJECT || env.PUBLIC_URL || "mailto:admin@example.com";
+        env.PUSH_VAPID_SUBJECT || env.PUBLIC_URL || "mailto:admin@example.com";
 
       // URLs http:// não são aceitas, converter para mailto:
       if (vapidSubject.startsWith("http://")) {
         vapidSubject = "mailto:admin@example.com";
         logger.warn(
-          `[Notification Trigger] PUBLIC_URL is http://, using mailto: fallback. Set VAPID_SUBJECT with https:// or mailto: for production.`,
+          `[Notification Trigger] PUBLIC_URL is http://, using mailto: fallback. Set PUSH_VAPID_SUBJECT with https:// or mailto: for production.`,
         );
       }
 
@@ -91,8 +91,8 @@ export default defineHook(({ filter, action }, { services, logger }) => {
 
       webpush.setVapidDetails(
         vapidSubject,
-        env.VAPID_PUBLIC_KEY,
-        env.VAPID_PRIVATE_KEY,
+        env.PUSH_PUBLIC_VAPID_KEY,
+        env.PUSH_PRIVATE_VAPID_KEY,
       );
 
       logger.info("[Notification Trigger] VAPID configured successfully");

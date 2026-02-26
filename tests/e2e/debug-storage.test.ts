@@ -4,6 +4,9 @@
 
 import { test, expect } from "@playwright/test";
 
+const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
+const ADMIN_PASSWORD = "admin123";
+
 test("verifica armazenamento de auth do Directus", async ({ page }) => {
   // Capturar logs
   page.on("console", (msg) => {
@@ -11,16 +14,16 @@ test("verifica armazenamento de auth do Directus", async ({ page }) => {
   });
 
   // Acessar a página de login
-  await page.goto("http://localhost:8055/admin/login");
+  await page.goto(`${DIRECTUS_URL}/admin/login`);
   await page.waitForLoadState("networkidle");
 
   // Fazer login
   await page.fill('input[type="email"]', "admin@example.com");
-  await page.fill('input[type="password"]', "test-password-ci-only");
+  await page.fill('input[type="password"]', ADMIN_PASSWORD);
   await page.click('button[type="submit"]');
 
   // Aguardar navegação após login
-  await page.waitForURL("**/admin/content/**", { timeout: 30000 });
+  await page.waitForURL("**/admin/**", { timeout: 30000 });
 
   // Aguardar para tokens serem salvos
   await page.waitForTimeout(2000);

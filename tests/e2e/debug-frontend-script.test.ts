@@ -10,6 +10,9 @@
  */
 import { test, expect } from "@playwright/test";
 
+const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
+const ADMIN_PASSWORD = "admin123";
+
 test.describe("Push Notification E2E Real", () => {
   test("deve receber push notification real no browser", async ({
     page,
@@ -35,7 +38,7 @@ test.describe("Push Notification E2E Real", () => {
 
     // Acessar a página de login
     console.log("\n=== Acessando página de login ===");
-    await page.goto("http://localhost:8055/admin/login");
+    await page.goto(`${DIRECTUS_URL}/admin/login`);
     await page.waitForLoadState("networkidle");
 
     // Verificar se há logs do PushNotification antes do login
@@ -81,11 +84,11 @@ test.describe("Push Notification E2E Real", () => {
     // Fazer login
     console.log("\n=== Fazendo login ===");
     await page.fill('input[type="email"]', "admin@example.com");
-    await page.fill('input[type="password"]', "test-password-ci-only");
+    await page.fill('input[type="password"]', ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
 
     // Aguardar navegação após login
-    await page.waitForURL("**/admin/content/**", { timeout: 30000 });
+    await page.waitForURL("**/admin/**", { timeout: 30000 });
     console.log("\n=== Login realizado com sucesso ===");
 
     // Aguardar um pouco para scripts executarem

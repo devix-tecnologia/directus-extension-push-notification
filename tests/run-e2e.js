@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { exec } from "child_process";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
@@ -19,6 +21,34 @@ function log(message) {
 
 function logError(message) {
   console.error(`[E2E ERROR] ${message}`);
+}
+
+function loadEnvTest() {
+  const envPath = join(process.cwd(), ".env.test");
+
+  if (!existsSync(envPath)) {
+    return {};
+  }
+
+  const content = readFileSync(envPath, "utf-8");
+  const vars = {};
+
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const eqIdx = trimmed.indexOf("=");
+
+    if (eqIdx < 0) continue;
+
+    const key = trimmed.substring(0, eqIdx).trim();
+    const value = trimmed.substring(eqIdx + 1).trim();
+
+    vars[key] = value;
+  }
+
+  return vars;
 }
 
 async function getDockerComposeCommand() {
@@ -104,10 +134,26 @@ async function waitForHealthy(maxWaitSeconds = 180) {
 async function stopContainer(composeCmd) {
   log(`Parando container existente ${CONTAINER_NAME}...`);
 
+  const vapidEnv = loadEnvTest();
+  const vapidVars = [
+    `TEST_SUITE_ID=${TEST_SUITE_ID}`,
+    `DIRECTUS_VERSION=${DIRECTUS_VERSION}`,
+    vapidEnv.PUSH_PUBLIC_VAPID_KEY
+      ? `PUSH_PUBLIC_VAPID_KEY=${vapidEnv.PUSH_PUBLIC_VAPID_KEY}`
+      : "",
+    vapidEnv.PUSH_PRIVATE_VAPID_KEY
+      ? `PUSH_PRIVATE_VAPID_KEY=${vapidEnv.PUSH_PRIVATE_VAPID_KEY}`
+      : "",
+    vapidEnv.PUSH_VAPID_SUBJECT
+      ? `PUSH_VAPID_SUBJECT=${vapidEnv.PUSH_VAPID_SUBJECT}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   try {
-    const env = `TEST_SUITE_ID=${TEST_SUITE_ID} DIRECTUS_VERSION=${DIRECTUS_VERSION}`;
     await execAsync(
-      `${env} ${composeCmd} -f docker-compose.test.yml down --remove-orphans --volumes`,
+      `${vapidVars} ${composeCmd} -f docker-compose.test.yml down --remove-orphans --volumes`,
     );
     log("Container parado com sucesso ✓");
   } catch {
@@ -119,10 +165,26 @@ async function stopContainer(composeCmd) {
 async function startContainer(composeCmd) {
   log(`Iniciando container ${CONTAINER_NAME}...`);
 
+  const vapidEnv = loadEnvTest();
+  const vapidVars = [
+    `TEST_SUITE_ID=${TEST_SUITE_ID}`,
+    `DIRECTUS_VERSION=${DIRECTUS_VERSION}`,
+    vapidEnv.PUSH_PUBLIC_VAPID_KEY
+      ? `PUSH_PUBLIC_VAPID_KEY=${vapidEnv.PUSH_PUBLIC_VAPID_KEY}`
+      : "",
+    vapidEnv.PUSH_PRIVATE_VAPID_KEY
+      ? `PUSH_PRIVATE_VAPID_KEY=${vapidEnv.PUSH_PRIVATE_VAPID_KEY}`
+      : "",
+    vapidEnv.PUSH_VAPID_SUBJECT
+      ? `PUSH_VAPID_SUBJECT=${vapidEnv.PUSH_VAPID_SUBJECT}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   try {
-    const env = `TEST_SUITE_ID=${TEST_SUITE_ID} DIRECTUS_VERSION=${DIRECTUS_VERSION}`;
     await execAsync(
-      `${env} ${composeCmd} -f docker-compose.test.yml up -d directus`,
+      `${vapidVars} ${composeCmd} -f docker-compose.test.yml up -d directus`,
     );
     log("Container iniciado com sucesso ✓");
   } catch (error) {

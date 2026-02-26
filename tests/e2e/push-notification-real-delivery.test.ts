@@ -10,9 +10,9 @@
 
 import { test, expect, type BrowserContext } from "@playwright/test";
 
-const BASE_URL = process.env.TEST_URL || "http://localhost:8055";
+const BASE_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
 const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "test-password-ci-only";
+const ADMIN_PASSWORD = "admin123";
 
 // Configuração do contexto
 test.use({
@@ -249,10 +249,15 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       expect(deliveries.length).toBeGreaterThan(0);
       console.log(`✅ ${deliveries.length} delivery(ies) criado(s)`);
 
-      // Verificar detalhes do delivery
-      const delivery = deliveries[0]!;
+      // Verificar detalhes do delivery (buscar o delivery correspondente à subscription criada)
+      const delivery =
+        deliveries.find(
+          (d) =>
+            d.subscription === subscription.id ||
+            String(d.subscription) === String(subscription.id),
+        ) || deliveries[0]!;
       expect(delivery.notification).toBe(notificationIdStr);
-      expect(delivery.subscription).toBe(subscription.id);
+      expect(String(delivery.subscription)).toBe(String(subscription.id));
 
       // O status pode ser 'queued', 'sent', 'delivered' ou 'failed'
       // (failed é esperado porque usamos endpoint fake do FCM)
@@ -306,7 +311,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       // Aguardar processamento de todas
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // Verificar que todas geraram deliveries
+      // Verificar que todas geraram deliveries (filtrando pela subscription deste teste)
       let totalDeliveries = 0;
       for (const notificationId of notifications) {
         const deliveries = await waitForDelivery(
@@ -315,7 +320,13 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
           notificationId,
           5000,
         );
-        totalDeliveries += deliveries.length;
+        // Contar apenas deliveries da subscription criada neste teste (evita interferência paralela)
+        const ownDeliveries = deliveries.filter(
+          (d) =>
+            d.subscription === subscription.id ||
+            String(d.subscription) === String(subscription.id),
+        );
+        totalDeliveries += ownDeliveries.length;
       }
 
       expect(totalDeliveries).toBe(3);
