@@ -62,7 +62,8 @@ export default defineHook(
 
             // Get all fields for this collection
             const collectionFields = fields.filter(
-              (f: any) => f.collection === collection.collection,
+              (f: Record<string, unknown>) =>
+                f.collection === collection.collection,
             );
 
             logger.debug(
@@ -74,8 +75,8 @@ export default defineHook(
               collection: collection.collection,
               meta: collection.meta,
               schema: collection.schema || null,
-              fields: collectionFields.map((field: any) => {
-                const fieldData: any = {
+              fields: collectionFields.map((field: Record<string, unknown>) => {
+                const fieldData: Record<string, unknown> = {
                   field: field.field,
                   type: field.type,
                   meta: field.meta,
@@ -141,7 +142,7 @@ export default defineHook(
               `[DB Configuration] Creating field '${field.field}' in collection '${field.collection}'`,
             );
 
-            const fieldData: any = {
+            const fieldData: Record<string, unknown> = {
               field: field.field,
               type: field.type,
               meta: field.meta,
@@ -151,7 +152,10 @@ export default defineHook(
               fieldData.schema = field.schema;
             }
 
-            await fieldsService.createField(field.collection, fieldData);
+            await fieldsService.createField(
+              field.collection,
+              fieldData as Parameters<typeof fieldsService.createField>[1],
+            );
             additionalFieldsCreated++;
 
             logger.debug(
@@ -232,9 +236,9 @@ export default defineHook(
       try {
         await getSchema({ database: database });
         logger.debug("[DB Configuration] Schema refreshed");
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.warn(
-          `[DB Configuration] Error refreshing schema: ${error.message}`,
+          `[DB Configuration] Error refreshing schema: ${(error as Error).message}`,
         );
       }
     });

@@ -8,7 +8,6 @@
  */
 
 const https = require("https");
-const http = require("http");
 const crypto = require("crypto");
 const { execSync } = require("child_process");
 const fs = require("fs");

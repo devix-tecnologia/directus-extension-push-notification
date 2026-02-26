@@ -51,15 +51,20 @@ test.describe("Push Notification - Confirmação de Chamada ao Endpoint", () => 
     browser,
   }) => {
     // Verificar se o mock server está disponível — pular se não estiver
-    const context = await browser.newContext({ baseURL: DIRECTUS_URL, ignoreHTTPSErrors: true });
+    const context = await browser.newContext({
+      baseURL: DIRECTUS_URL,
+      ignoreHTTPSErrors: true,
+    });
     try {
-      const healthResponse = await context.request.get(
-        `${MOCK_PUSH_SERVER_URL}/health`,
-        { timeout: 3000 },
-      ).catch(() => null);
+      const healthResponse = await context.request
+        .get(`${MOCK_PUSH_SERVER_URL}/health`, { timeout: 3000 })
+        .catch(() => null);
 
       if (!healthResponse?.ok()) {
-        test.skip(true, `Mock push server não disponível em ${MOCK_PUSH_SERVER_URL}`);
+        test.skip(
+          true,
+          `Mock push server não disponível em ${MOCK_PUSH_SERVER_URL}`,
+        );
         return;
       }
 
@@ -109,7 +114,9 @@ test.describe("Push Notification - Confirmação de Chamada ao Endpoint", () => 
       const subQueryData = await subQueryResponse.json();
       expect(subQueryData.data?.length).toBeGreaterThan(0);
       const pushSubscriptionId = subQueryData.data[0].id as string;
-      console.log(`✅ Subscription registrada: ${pushSubscriptionId} → ${mockEndpoint}`);
+      console.log(
+        `✅ Subscription registrada: ${pushSubscriptionId} → ${mockEndpoint}`,
+      );
 
       // 5. Criar notificação
       const notifResponse = await context.request.post(
@@ -185,9 +192,15 @@ test.describe("Push Notification - Confirmação de Chamada ao Endpoint", () => 
       expect(message.headers.authorization).toBeTruthy(); // VAPID header
       expect(message.bodyLength).toBeGreaterThan(0); // Payload criptografado
 
-      console.log(`✅ CONFIRMADO: endpoint ${mockEndpoint} foi chamado pelo hook`);
-      console.log(`   - Authorization header: ${message.headers.authorization?.substring(0, 30)}...`);
-      console.log(`   - Body size: ${message.bodyLength} bytes (payload criptografado)`);
+      console.log(
+        `✅ CONFIRMADO: endpoint ${mockEndpoint} foi chamado pelo hook`,
+      );
+      console.log(
+        `   - Authorization header: ${message.headers.authorization?.substring(0, 30)}...`,
+      );
+      console.log(
+        `   - Body size: ${message.bodyLength} bytes (payload criptografado)`,
+      );
       console.log(`   - Delivery status: ${delivery!.status}`);
 
       // 8. Verificar que o delivery foi marcado como "sent" (mock retornou 201)

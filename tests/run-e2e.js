@@ -91,7 +91,9 @@ async function getContainerPort() {
 
 async function getMockServerPort() {
   try {
-    const { stdout } = await execAsync(`docker port ${MOCK_CONTAINER_NAME} 8080`);
+    const { stdout } = await execAsync(
+      `docker port ${MOCK_CONTAINER_NAME} 8080`,
+    );
     const match = stdout.trim().match(/:([0-9]+)$/);
     return match ? match[1] : null;
   } catch {
@@ -278,7 +280,9 @@ async function main() {
         log("Mock push server iniciado ✓");
       }
     } catch {
-      log("Mock push server não disponível (testes de confirmação serão ignorados)");
+      log(
+        "Mock push server não disponível (testes de confirmação serão ignorados)",
+      );
     }
 
     // 5. Obter porta do container
