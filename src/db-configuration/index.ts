@@ -45,58 +45,69 @@ export default defineHook(
         for (const collection of collections) {
           try {
             await collectionsService.readOne(collection.collection);
-            logger.debug(
-              `[DB Configuration] Collection '${collection.collection}' already exists`,
+            logger.info(
+              `[DB Configuration] Collection '${collection.collection}' already exists, skipping`,
             );
           } catch (e: unknown) {
-            if (
-              (e as { message?: string })?.message !==
-              "You don't have permission to access this."
-            ) {
-              logger.error(
-                `[DB Configuration] Error checking collection '${collection.collection}':`,
-                e,
-              );
-              throw e;
-            }
-
             // Get all fields for this collection
             const collectionFields = fields.filter(
               (f: Record<string, unknown>) =>
                 f.collection === collection.collection,
             );
 
-            logger.debug(
+            logger.info(
               `[DB Configuration] Creating collection '${collection.collection}' with ${collectionFields.length} field(s)`,
             );
 
             // Create collection WITH fields - prevents auto-creation of basic id field
-            await collectionsService.createOne({
-              collection: collection.collection,
-              meta: collection.meta,
-              schema: collection.schema || null,
-              fields: collectionFields.map((field: Record<string, unknown>) => {
-                const fieldData: Record<string, unknown> = {
-                  field: field.field,
-                  type: field.type,
-                  meta: field.meta,
-                };
+            try {
+              await collectionsService.createOne({
+                collection: collection.collection,
+                meta: collection.meta,
+                schema: collection.schema || null,
+                fields: collectionFields.map(
+                  (field: Record<string, unknown>) => {
+                    const fieldData: Record<string, unknown> = {
+                      field: field.field,
+                      type: field.type,
+                      meta: field.meta,
+                    };
 
-                // Only add schema if not null (alias fields don't have schema)
-                if (field.schema !== null && field.schema !== undefined) {
-                  fieldData.schema = field.schema;
-                }
+                    // Only add schema if not null (alias fields don't have schema)
+                    if (field.schema !== null && field.schema !== undefined) {
+                      fieldData.schema = field.schema;
+                    }
 
-                return fieldData;
-              }),
-            });
+                    return fieldData;
+                  },
+                ),
+              });
+              collectionsCreated++;
+              fieldsCreated += collectionFields.length;
 
-            collectionsCreated++;
-            fieldsCreated += collectionFields.length;
-
-            logger.debug(
-              `[DB Configuration] Collection '${collection.collection}' created successfully with ${collectionFields.length} field(s)`,
-            );
+              logger.info(
+                `[DB Configuration] Collection '${collection.collection}' created successfully with ${collectionFields.length} field(s)`,
+              );
+            } catch (createError: unknown) {
+              const err = createError as { message?: string; code?: string };
+              // Se já existe, ignorar (pode ter sido criada por outra extensão)
+              if (
+                err?.message?.includes("already exists") ||
+                err?.code === "23505" || // Duplicate key
+                err?.code === "42P07" || // Duplicate table
+                err?.code === "42P16" // Multiple primary keys
+              ) {
+                logger.warn(
+                  `[DB Configuration] Collection '${collection.collection}' already exists (created by another extension?), skipping`,
+                );
+              } else {
+                logger.error(
+                  `[DB Configuration] Error creating collection '${collection.collection}':`,
+                  createError,
+                );
+                // Não fazer throw - continuar com outras coleções
+              }
+            }
           }
         }
 
@@ -127,17 +138,6 @@ export default defineHook(
               `[DB Configuration] Field '${field.field}' in '${field.collection}' already exists`,
             );
           } catch (e: unknown) {
-            if (
-              (e as { message?: string })?.message !==
-              "You don't have permission to access this."
-            ) {
-              logger.error(
-                `[DB Configuration] Error checking field '${field.field}' in '${field.collection}':`,
-                e,
-              );
-              throw e;
-            }
-
             logger.debug(
               `[DB Configuration] Creating field '${field.field}' in collection '${field.collection}'`,
             );
@@ -184,12 +184,12 @@ export default defineHook(
         for (const relation of relations) {
           try {
             logger.debug(
-              `[DB Configuration] Creating relation '${relation.field}' in collection '${relation.collection}'`,
+              `[DB Configuration] Creating relation '${relation.collection}.${relation.field}' -> ${relation.related_collection}`,
             );
             await relationsService.createOne(relation);
             relationsCreated++;
-            logger.debug(
-              `[DB Configuration] Relation '${relation.field}' created successfully`,
+            logger.info(
+              `[DB Configuration] Relation '${relation.collection}.${relation.field}' created successfully`,
             );
           } catch (e: unknown) {
             const error = e as { message?: string };
@@ -199,14 +199,13 @@ export default defineHook(
                 error.message.includes("duplicate"))
             ) {
               logger.debug(
-                `[DB Configuration] Relation '${relation.field}' in '${relation.collection}' already exists`,
+                `[DB Configuration] Relation '${relation.collection}.${relation.field}' already exists`,
               );
             } else {
-              logger.error(
-                `[DB Configuration] Error creating relation '${relation.field}' in '${relation.collection}':`,
-                e,
+              logger.warn(
+                `[DB Configuration] Could not create relation '${relation.collection}.${relation.field}': ${error?.message}`,
               );
-              throw e;
+              // Não fazer throw - continuar com outras relações
             }
           }
         }
