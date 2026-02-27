@@ -31,6 +31,12 @@ export interface PushSubscription {
   date_expires?: string;
 }
 
+export interface NotificationTranslation {
+  languages_code: string;
+  title: string;
+  body: string;
+}
+
 export interface UserNotification {
   id: string;
   title: string;
@@ -42,6 +48,7 @@ export interface UserNotification {
   icon?: string; // M2O → directus_files (file ID)
   icon_url?: string;
   data?: Record<string, unknown>;
+  translations?: NotificationTranslation[];
   date_created: string;
 }
 
@@ -107,19 +114,29 @@ export async function createUserNotification(
   data: Partial<UserNotification> & { user: string },
   testSuiteId?: string,
 ): Promise<UserNotification> {
+  const payload: Record<string, unknown> = {
+    title: data.title || "Test Notification",
+    body: data.body || "Test notification body",
+    user: data.user,
+    channel: data.channel || "push",
+    priority: data.priority || "normal",
+    action_url: data.action_url || null,
+    icon_url: data.icon_url || null,
+    data: data.data || null,
+  };
+
+  if (data.translations && data.translations.length > 0) {
+    payload.translations = data.translations.map((t) => ({
+      languages_code: t.languages_code,
+      title: t.title,
+      body: t.body,
+    }));
+  }
+
   const response = await dockerHttpRequest(
     "POST",
     "/items/user_notification",
-    {
-      title: data.title || "Test Notification",
-      body: data.body || "Test notification body",
-      user: data.user,
-      channel: data.channel || "push",
-      priority: data.priority || "normal",
-      action_url: data.action_url || null,
-      icon_url: data.icon_url || null,
-      data: data.data || null,
-    },
+    payload,
     {
       Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
     },
@@ -231,6 +248,70 @@ export async function updateUserPushEnabled(
     },
     testSuiteId,
   );
+}
+
+/**
+ * Cria um registro de idioma na tabela languages
+ */
+export async function createLanguage(
+  code: string,
+  name: string,
+  testSuiteId?: string,
+): Promise<void> {
+  await dockerHttpRequest(
+    "POST",
+    "/items/languages",
+    {
+      code,
+      name,
+      direction: "ltr",
+    },
+    {
+      Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
+    },
+    testSuiteId,
+  );
+}
+
+/**
+ * Atualiza o idioma do usuário
+ */
+export async function updateUserLanguage(
+  userId: string,
+  language: string | null,
+  testSuiteId?: string,
+): Promise<void> {
+  await dockerHttpRequest(
+    "PATCH",
+    `/users/${userId}`,
+    {
+      language,
+    },
+    {
+      Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
+    },
+    testSuiteId,
+  );
+}
+
+/**
+ * Busca traduções de uma notificação
+ */
+export async function getNotificationTranslations(
+  notificationId: string,
+  testSuiteId?: string,
+): Promise<NotificationTranslation[]> {
+  const response = await dockerHttpRequest(
+    "GET",
+    `/items/user_notification_translations?filter[user_notification_id][_eq]=${notificationId}&fields=languages_code,title,body`,
+    undefined,
+    {
+      Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
+    },
+    testSuiteId,
+  );
+
+  return (response.data as NotificationTranslation[]) || [];
 }
 
 /**
