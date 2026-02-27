@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/directus-extension-push-notification)](https://www.npmjs.com/package/directus-extension-push-notification)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Directus](https://img.shields.io/badge/Directus-10.1.7+-6644FF)](https://directus.io)
+[![Directus](https://img.shields.io/badge/Directus-10.x%20%7C%2011.x-6644FF)](https://directus.io)
 
 > ⚠️ **BETA VERSION WARNING**  
 > This extension is currently in **BETA**. While stable for testing and development, it's highly recommended to **backup your database** before installing or updating to any beta version. Breaking changes may occur between beta releases.

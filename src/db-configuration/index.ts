@@ -257,9 +257,12 @@ async function setupDefaultLanguages({
   getSchema,
   logger,
 }: {
-  services: Record<string, unknown>;
-  database: unknown;
-  getSchema: (options?: { database?: unknown }) => Promise<unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  services: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  database: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getSchema: (options?: { database?: any }) => Promise<any>;
   logger: {
     info: (msg: string) => void;
     debug: (msg: string) => void;

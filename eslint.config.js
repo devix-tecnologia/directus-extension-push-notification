@@ -27,6 +27,12 @@ export default [
       "test-results/",
       "test-user-data-dir/",
       "packages/",
+      "tests/",
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "**/*.e2e.ts",
+      "vitest.config.ts",
+      "playwright.config.cjs",
     ],
   },
 

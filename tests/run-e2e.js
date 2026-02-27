@@ -220,10 +220,6 @@ async function runTests(port) {
     log(`Mock Push Endpoint Base (interno): ${mockEndpointBase}`);
   }
 
-  const mockEnv = mockPort
-    ? ` MOCK_PUSH_SERVER_URL=${mockServerUrl} MOCK_PUSH_ENDPOINT_BASE=${mockEndpointBase}`
-    : "";
-
   const spawnEnv = {
     ...process.env,
     DIRECTUS_URL: directusUrl,

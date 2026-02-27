@@ -1,25 +1,31 @@
 {
   "name": "directus-extension-push-notification",
-  "description": "Complete push notification system for Directus with multi-device support, delivery tracking, and service worker integration",
+  "description": "Complete push notification system for Directus with multi-device support, delivery tracking, 46 languages, and service worker integration",
   "icon": "extension",
   "private": false,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "keywords": [
     "directus",
     "directus-extension",
     "directus-custom-bundle",
+    "directus-hook",
+    "directus-endpoint",
     "push-notification",
     "push-notifications",
     "web-push",
     "notifications",
     "vapid",
     "service-worker",
+    "pwa",
+    "progressive-web-app",
     "multi-device",
     "delivery-tracking",
     "fcm",
     "browser-notifications",
-    "real-time"
+    "real-time",
+    "translations",
+    "multilingual"
   ],
   "files": [
     "dist/**/*",
@@ -29,7 +35,7 @@
     "SECURITY.md"
   ],
   "directus:extension": {
-    "host": "^10.1.7",
+    "host": "^10.0.0 || ^11.0.0",
     "type": "bundle",
     "path": {
       "app": "dist/app.js",
@@ -124,7 +130,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.2",
     "@types/web-push": "^3.6.4",
-    "axios": "^1.13.5",
+    "axios": "^1.13.6",
     "dotenv": "^17.3.1",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
