@@ -8,6 +8,12 @@ import type {
 
 const collection = "push_subscription";
 
+/**
+ * Parâmetros de transformação de imagem do Directus para ícones de push notification.
+ * @see https://docs.directus.io/reference/files.html#custom-transformations
+ */
+const ICON_TRANSFORM_PARAMS = "width=192&height=192&fit=cover&quality=80";
+
 export default defineEndpoint(
   async (router, { services, database, getSchema, env, logger }) => {
     const { ItemsService } = services;
@@ -21,6 +27,74 @@ export default defineEndpoint(
       env.PUSH_PUBLIC_VAPID_KEY,
       env.PUSH_PRIVATE_VAPID_KEY,
     );
+
+    /**
+     * GET /push-notification/icon/:notification_id
+     *
+     * Endpoint público que serve o ícone de uma push notification.
+     * - Se a notificação tem `icon` (directus_files) → proxy do asset com transformação 192×192px
+     * - Se a notificação tem `icon_url` (URL externa) → redirect 302
+     * - Senão → redirect para /admin/favicon.ico
+     *
+     * Não requer autenticação, pois é chamado pelo service worker.
+     */
+    router.get("/icon/:notification_id", async (req, res) => {
+      try {
+        const notificationId = req.params.notification_id;
+
+        if (!notificationId) {
+          res.redirect("/admin/favicon.ico");
+          return;
+        }
+
+        const schema = await getSchema();
+        const itemsService = new ItemsService("user_notification", {
+          knex: database,
+          schema,
+        });
+
+        let notification: Record<string, unknown>;
+        try {
+          notification = await itemsService.readOne(notificationId, {
+            fields: ["icon", "icon_url"],
+          }) as Record<string, unknown>;
+        } catch {
+          logger.warn(
+            `[Push Notification] Icon request for non-existent notification: ${notificationId}`,
+          );
+          res.redirect("/admin/favicon.ico");
+          return;
+        }
+
+        // Prioridade 1: icon (arquivo no Directus) → proxy com transformação
+        if (notification.icon) {
+          const assetUrl = `/assets/${notification.icon as string}?${ICON_TRANSFORM_PARAMS}`;
+          logger.debug(
+            `[Push Notification] Proxying icon asset for notification ${notificationId}`,
+          );
+          res.redirect(assetUrl);
+          return;
+        }
+
+        // Prioridade 2: icon_url (URL externa) → redirect 302
+        if (notification.icon_url) {
+          logger.debug(
+            `[Push Notification] Redirecting to external icon for notification ${notificationId}`,
+          );
+          res.redirect(notification.icon_url as string);
+          return;
+        }
+
+        // Fallback
+        res.redirect("/admin/favicon.ico");
+      } catch (error: unknown) {
+        const err = error as { message?: string };
+        logger.error(
+          `[Push Notification] Error serving icon: ${err.message}`,
+        );
+        res.redirect("/admin/favicon.ico");
+      }
+    });
 
     router.post("/register", async (req, res) => {
       logger.info("[Push Notification] Registering subscription");

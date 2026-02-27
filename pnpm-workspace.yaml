@@ -1,3 +1,6 @@
+packages:
+  - "packages/*"
+
 onlyBuiltDependencies:
   - "@opentask/taskin-file-system-provider"
   - "@opentask/taskin-task-server-mcp"

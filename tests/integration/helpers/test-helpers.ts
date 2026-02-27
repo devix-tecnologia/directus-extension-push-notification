@@ -39,6 +39,7 @@ export interface UserNotification {
   channel: "push" | "email" | "sms" | "in_app";
   priority: "low" | "normal" | "high" | "urgent";
   action_url?: string;
+  icon?: string; // M2O → directus_files (file ID)
   icon_url?: string;
   data?: Record<string, unknown>;
   date_created: string;

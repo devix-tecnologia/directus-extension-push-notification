@@ -26,6 +26,7 @@ export default [
       "playwright-report/",
       "test-results/",
       "test-user-data-dir/",
+      "packages/",
     ],
   },
 

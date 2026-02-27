@@ -34,6 +34,14 @@ export interface PushSubscription {
 export type NotificationChannel = "push" | "email" | "sms" | "in_app";
 export type NotificationPriority = "low" | "normal" | "high" | "urgent";
 
+export interface UserNotificationTranslation {
+  id?: number;
+  user_notification_id?: string;
+  languages_code: string;
+  title: string;
+  body: string;
+}
+
 export interface UserNotification {
   id: string;
   title: string;
@@ -42,8 +50,10 @@ export interface UserNotification {
   channel: NotificationChannel;
   priority: NotificationPriority;
   action_url?: string;
-  icon_url?: string;
+  icon?: string; // M2O → directus_files (file ID, resolved to /assets/{id})
+  icon_url?: string; // URL externa alternativa
   data?: Record<string, unknown>;
+  translations?: UserNotificationTranslation[];
   user_created?: string; // Renamed from created_by
   date_created?: string; // Renamed from created_at
   date_expires?: string; // Renamed from expires_at
@@ -99,7 +109,8 @@ export interface SendNotificationRequest {
   channel?: NotificationChannel;
   priority?: NotificationPriority;
   action_url?: string;
-  icon_url?: string;
+  icon?: string; // M2O → directus_files (file ID)
+  icon_url?: string; // URL externa alternativa
   data?: Record<string, unknown>;
   dry_run?: boolean; // Inspirado no Firebase Messaging - simula sem enviar
   ttl?: number; // Time to live em segundos

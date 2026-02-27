@@ -10,6 +10,12 @@ import type {
 
 // === Hook Context Types ===
 
+export interface NotificationTranslation {
+  languages_code: string;
+  title: string;
+  body: string;
+}
+
 export interface NotificationPayload {
   id: string;
   title: string;
@@ -18,8 +24,10 @@ export interface NotificationPayload {
   channel: "push" | "email" | "sms" | "in_app";
   priority?: NotificationPriority;
   action_url?: string;
-  icon_url?: string;
+  icon?: string; // M2O → directus_files (file ID)
+  icon_url?: string; // URL externa alternativa
   data?: Record<string, unknown>;
+  translations?: NotificationTranslation[];
 }
 
 export interface SubscriptionRecord {
@@ -45,6 +53,7 @@ export interface DeliveryRecord {
 export interface UserRecord {
   id: string;
   push_enabled: boolean;
+  language?: string | null;
 }
 
 // === Push Send Options (inspirado no Firebase Messaging) ===

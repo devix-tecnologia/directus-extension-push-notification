@@ -1,5 +1,7 @@
 import { defineHook } from "@directus/extensions-sdk";
 import webpush from "web-push";
+import { resolveIconUrl } from "./resolve-icon.js";
+import { resolveTranslation } from "./resolve-translation.js";
 
 interface PushSubscription {
   id: string | number;
@@ -112,12 +114,13 @@ export default defineHook(({ filter, action }, { services, logger }) => {
       });
 
       const user = await usersService.readOne(notification.user, {
-        fields: ["id", "push_enabled"],
+        fields: ["id", "push_enabled", "language"],
       });
 
       logger.debug("[Notification Trigger] User loaded", {
         id: user.id,
         push_enabled: user.push_enabled,
+        language: user.language,
       });
 
       if (!user.push_enabled) {
@@ -130,6 +133,52 @@ export default defineHook(({ filter, action }, { services, logger }) => {
       logger.debug(
         "[Notification Trigger] User has push enabled, fetching subscriptions",
       );
+
+      // Buscar traduções da notificação
+      const translationsService = new ItemsService(
+        "user_notification_translations",
+        {
+          schema: schema!,
+          knex: database,
+        },
+      );
+
+      let translations: Array<{
+        languages_code: string;
+        title: string;
+        body: string;
+      }> = [];
+      try {
+        translations = (await translationsService.readByQuery({
+          filter: {
+            user_notification_id: { _eq: notification.id },
+          },
+          fields: ["languages_code", "title", "body"],
+          limit: -1,
+        })) as Array<{ languages_code: string; title: string; body: string }>;
+        logger.debug(
+          `[Notification Trigger] Found ${translations.length} translation(s) for notification ${notification.id}`,
+        );
+      } catch {
+        // Tabela pode não existir ainda (primeira execução antes do db-configuration)
+        logger.debug(
+          "[Notification Trigger] Could not fetch translations, using direct fields",
+        );
+      }
+
+      // Resolver title/body no idioma do usuário
+      const resolved = resolveTranslation({
+        title: notification.title,
+        body: notification.body,
+        translations,
+        user_language: user.language,
+      });
+
+      logger.debug("[Notification Trigger] Resolved translation", {
+        user_language: user.language,
+        resolved_title: resolved.title,
+        has_translations: translations.length > 0,
+      });
 
       // Buscar TODAS as subscriptions ATIVAS do usuário (múltiplos dispositivos)
       const subscriptions = await subscriptionsService.readByQuery({
@@ -208,11 +257,18 @@ export default defineHook(({ filter, action }, { services, logger }) => {
             keys: keys,
           };
 
+          // Resolver URL do ícone: icon (directus_files) > icon_url > fallback
+          const resolvedIconUrl = resolveIconUrl({
+            notification_id: notification.id,
+            icon: notification.icon,
+            icon_url: notification.icon_url,
+          });
+
           // Payload inclui ID da push_delivery para callback do Service Worker
           const pushPayload = JSON.stringify({
-            title: notification.title,
-            body: notification.body,
-            icon_url: notification.icon_url,
+            title: resolved.title,
+            body: resolved.body,
+            icon_url: resolvedIconUrl,
             action_url: notification.action_url,
             priority: notification.priority,
             notification_id: notification.id,
