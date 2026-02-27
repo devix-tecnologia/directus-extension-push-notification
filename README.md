@@ -256,6 +256,176 @@ Performs a soft delete (sets `is_active: false`) to preserve delivery history.
 
 **Response:** `200 OK`
 
+## 📨 Creating Notifications (Examples)
+
+### Basic Notification
+
+```bash
+curl -X POST https://your-directus.com/items/user_notification \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "USER_UUID",
+    "channel": "push",
+    "title": "New message",
+    "body": "You have a new message from John"
+  }'
+```
+
+### With Action URL (Deep Linking)
+
+When the user clicks the notification, they are redirected to the specified URL:
+
+```bash
+curl -X POST https://your-directus.com/items/user_notification \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "USER_UUID",
+    "channel": "push",
+    "title": "Order shipped!",
+    "body": "Your order #1234 has been shipped",
+    "action_url": "https://myapp.com/orders/1234",
+    "priority": "high"
+  }'
+```
+
+### With Custom Icon (Directus File)
+
+Upload an image to Directus Files first, then reference its UUID:
+
+```bash
+curl -X POST https://your-directus.com/items/user_notification \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "USER_UUID",
+    "channel": "push",
+    "title": "Welcome!",
+    "body": "Thanks for joining our platform",
+    "icon": "FILE_UUID_FROM_DIRECTUS_FILES"
+  }'
+```
+
+The extension automatically resolves the file ID to `/assets/{FILE_UUID}` for the push notification icon.
+
+### With i18n Translations
+
+Send a notification that adapts to the user's language. The system resolves the language automatically based on the user's `language` field in Directus:
+
+```bash
+curl -X POST https://your-directus.com/items/user_notification \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "USER_UUID",
+    "channel": "push",
+    "title": "New update",
+    "body": "A new version is available",
+    "translations": [
+      {
+        "languages_code": "pt-BR",
+        "title": "Nova atualização",
+        "body": "Uma nova versão está disponível"
+      },
+      {
+        "languages_code": "es-ES",
+        "title": "Nueva actualización",
+        "body": "Una nueva versión está disponible"
+      }
+    ]
+  }'
+```
+
+**How it works:**
+- If user's language is `pt-BR` → receives "Nova atualização"
+- If user's language is `es-ES` → receives "Nueva actualización"
+- Any other language → falls back to the base `title`/`body` ("New update")
+
+### Full Example (All Fields)
+
+```bash
+curl -X POST https://your-directus.com/items/user_notification \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "USER_UUID",
+    "channel": "push",
+    "title": "Flash Sale!",
+    "body": "50% off all items for the next 2 hours",
+    "priority": "urgent",
+    "action_url": "https://myapp.com/sales/flash",
+    "icon": "FILE_UUID",
+    "data": {
+      "sale_id": "SALE_123",
+      "discount": 50,
+      "category": "all"
+    },
+    "date_expires": "2026-03-01T00:00:00Z",
+    "translations": [
+      {
+        "languages_code": "pt-BR",
+        "title": "Promoção Relâmpago!",
+        "body": "50% de desconto em todos os itens pelas próximas 2 horas"
+      }
+    ]
+  }'
+```
+
+### JavaScript/TypeScript Example
+
+```typescript
+// Using fetch
+const response = await fetch("https://your-directus.com/items/user_notification", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
+  },
+  body: JSON.stringify({
+    user: userId,
+    channel: "push",
+    title: "Task assigned",
+    body: "You've been assigned to task #42",
+    action_url: "/tasks/42",
+    priority: "high",
+  }),
+});
+```
+
+```typescript
+// Using Directus SDK
+import { createDirectus, rest, createItem } from "@directus/sdk";
+
+const client = createDirectus("https://your-directus.com").with(rest());
+
+await client.request(
+  createItem("user_notification", {
+    user: userId,
+    channel: "push",
+    title: "Task assigned",
+    body: "You've been assigned to task #42",
+    action_url: "/tasks/42",
+    priority: "high",
+  })
+);
+```
+
+### Available Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `user` | UUID | ✅ | Recipient user ID |
+| `channel` | enum | ✅ | `push`, `email`, `sms`, or `in_app` |
+| `title` | string | ✅ | Notification title |
+| `body` | string | ✅ | Notification body text |
+| `priority` | enum | | `low`, `normal` (default), `high`, `urgent` |
+| `action_url` | string | | URL to open on notification click |
+| `icon` | UUID | | Directus file ID for notification icon |
+| `data` | JSON | | Additional payload data for the app |
+| `date_expires` | timestamp | | When the notification expires |
+| `translations` | array | | i18n translations (`languages_code`, `title`, `body`) |
+
 ## ❓ Frequently Asked Questions
 
 ### Do I need a Firebase/FCM account or Google Cloud project?

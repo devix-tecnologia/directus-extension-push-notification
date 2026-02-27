@@ -434,11 +434,21 @@ erDiagram
         enum channel "push/email/sms/in_app"
         enum priority "low/normal/high/urgent"
         string action_url "URL to open on click"
-        string icon_url "custom notification icon"
+        uuid icon FK "→ directus_files"
         json data "additional app data"
         uuid user_created FK "→ directus_users (creator)"
         timestamp date_created
         timestamp date_expires
+    }
+
+    user_notification ||--o{ notification_translation : "has"
+
+    notification_translation {
+        integer id PK
+        uuid user_notification_id FK "→ user_notification"
+        string languages_code "e.g. en-US, pt-BR"
+        string title
+        text body
     }
 
     push_delivery {
@@ -495,12 +505,25 @@ Stores notification messages for users across all channels.
 - `channel` (enum: push/email/sms/in_app) - Delivery channel
 - `priority` (enum: low/normal/high/urgent, default: normal) - Priority level
 - `action_url` (string) - URL to open when clicked
-- `icon_url` (string) - Custom icon URL
+- `icon` (m2o → directus_files) - Notification icon (Directus file reference, resolved to `/assets/{id}`)
 - `data` (json) - Additional data for the app
 - `user_created` (m2o → directus_users) - Creator
 - `date_created` (timestamp) - Creation timestamp
 - `date_expires` (timestamp) - Expiration timestamp
+- `translations` (o2m → notification_translation) - i18n translations for title/body
 - `deliveries` (o2m → push_delivery) - Virtual field showing all deliveries for this notification
+
+#### 2.1 `notification_translation` (i18n)
+
+Stores translated title/body for notifications per language.
+
+**Fields:**
+
+- `id` (integer) - Primary key
+- `user_notification_id` (m2o → user_notification) - Parent notification
+- `languages_code` (string) - Language code (e.g., `en-US`, `pt-BR`)
+- `title` (string) - Translated title
+- `body` (text) - Translated body
 
 #### 3. `push_delivery` (Join Table)
 
