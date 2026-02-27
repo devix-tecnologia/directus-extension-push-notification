@@ -186,6 +186,15 @@ export default defineHook(({ filter, action }, { services, logger }) => {
           user: { _eq: notification.user },
           is_active: { _eq: true },
         },
+        fields: [
+          "id",
+          "user",
+          "endpoint",
+          "keys",
+          "user_agent",
+          "device_name",
+          "is_active",
+        ],
         limit: -1,
       });
 

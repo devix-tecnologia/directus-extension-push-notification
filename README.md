@@ -45,7 +45,7 @@ Always generate your own unique keys:
 npx web-push generate-vapid-keys
 ```
 
-**Keep your `VAPID_PRIVATE_KEY` secret!** Never commit it to Git or share it publicly.
+**Keep your `PUSH_PRIVATE_VAPID_KEY` secret!** Never commit it to Git or share it publicly.
 
 See [SECURITY.md](SECURITY.md) for complete security guidelines.
 
@@ -77,11 +77,11 @@ npx web-push generate-vapid-keys
 
 ```bash
 # Required: VAPID keys for push notifications
-VAPID_PUBLIC_KEY=your_public_key_here
-VAPID_PRIVATE_KEY=your_private_key_here
+PUSH_PUBLIC_VAPID_KEY=your_public_key_here
+PUSH_PRIVATE_VAPID_KEY=your_private_key_here
 ```
 
-⚠️ **Keep `VAPID_PRIVATE_KEY` secret!** Never commit it to Git or expose it in client code.
+⚠️ **Keep `PUSH_PRIVATE_VAPID_KEY` secret!** Never commit it to Git or expose it in client code.
 
 ### Optional: VAPID Subject (Production only)
 
@@ -91,17 +91,17 @@ VAPID_PRIVATE_KEY=your_private_key_here
 
 **Automatic fallback behavior:**
 
-1. Uses `VAPID_SUBJECT` if you set it (highest priority)
-2. Falls back to `PUBLIC_URL` if `VAPID_SUBJECT` is not set
+1. Uses `PUSH_VAPID_SUBJECT` if you set it (highest priority)
+2. Falls back to `PUBLIC_URL` if `PUSH_VAPID_SUBJECT` is not set
 3. Converts `http://` URLs to `mailto:admin@example.com` (development safe mode)
 
 **How to set:**
 
 ```bash
 # Option 1: Explicit subject (production)
-VAPID_SUBJECT=https://yourdomain.com
+PUSH_VAPID_SUBJECT=https://yourdomain.com
 # or
-VAPID_SUBJECT=mailto:contact@yourdomain.com
+PUSH_VAPID_SUBJECT=mailto:contact@yourdomain.com
 
 # Option 2: Let it use PUBLIC_URL (recommended)
 PUBLIC_URL=https://yourdomain.com  # Extension uses this automatically
@@ -139,8 +139,8 @@ Private Key: xJQ5l1xcpN79...
 Add both to your Directus `.env` file:
 
 ```bash
-VAPID_PUBLIC_KEY=BPT864f6ph9v...
-VAPID_PRIVATE_KEY=xJQ5l1xcpN79...
+PUSH_PUBLIC_VAPID_KEY=BPT864f6ph9v...
+PUSH_PRIVATE_VAPID_KEY=xJQ5l1xcpN79...
 ```
 
 Restart Directus again.
@@ -338,6 +338,7 @@ curl -X POST https://your-directus.com/items/user_notification \
 ```
 
 **How it works:**
+
 - If user's language is `pt-BR` → receives "Nova atualização"
 - If user's language is `es-ES` → receives "Nueva actualización"
 - Any other language → falls back to the base `title`/`body` ("New update")
@@ -376,21 +377,24 @@ curl -X POST https://your-directus.com/items/user_notification \
 
 ```typescript
 // Using fetch
-const response = await fetch("https://your-directus.com/items/user_notification", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${accessToken}`,
+const response = await fetch(
+  "https://your-directus.com/items/user_notification",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      user: userId,
+      channel: "push",
+      title: "Task assigned",
+      body: "You've been assigned to task #42",
+      action_url: "/tasks/42",
+      priority: "high",
+    }),
   },
-  body: JSON.stringify({
-    user: userId,
-    channel: "push",
-    title: "Task assigned",
-    body: "You've been assigned to task #42",
-    action_url: "/tasks/42",
-    priority: "high",
-  }),
-});
+);
 ```
 
 ```typescript
@@ -407,24 +411,25 @@ await client.request(
     body: "You've been assigned to task #42",
     action_url: "/tasks/42",
     priority: "high",
-  })
+  }),
 );
 ```
 
 ### Available Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `user` | UUID | ✅ | Recipient user ID |
-| `channel` | enum | ✅ | `push`, `email`, `sms`, or `in_app` |
-| `title` | string | ✅ | Notification title |
-| `body` | string | ✅ | Notification body text |
-| `priority` | enum | | `low`, `normal` (default), `high`, `urgent` |
-| `action_url` | string | | URL to open on notification click |
-| `icon` | UUID | | Directus file ID for notification icon |
-| `data` | JSON | | Additional payload data for the app |
-| `date_expires` | timestamp | | When the notification expires |
-| `translations` | array | | i18n translations (`languages_code`, `title`, `body`) |
+| Field          | Type      | Required | Default  | Description                                               |
+| -------------- | --------- | -------- | -------- | --------------------------------------------------------- |
+| `user`         | UUID      | ✅       |          | Recipient user ID                                         |
+| `channel`      | enum      | ✅       |          | `push`, `email`, `sms`, or `in_app`                       |
+| `title`        | string    | ✅       |          | Notification title (supports i18n via `translations`)     |
+| `body`         | string    | ✅       |          | Notification body text (supports i18n via `translations`) |
+| `priority`     | enum      |          | `normal` | `low`, `normal`, `high`, `urgent`                         |
+| `action_url`   | string    |          | `null`   | URL to open on notification click                         |
+| `icon`         | UUID      |          | `null`   | Directus file ID for notification icon                    |
+| `icon_url`     | string    |          | `null`   | External icon URL (alternative to `icon`)                 |
+| `data`         | JSON      |          | `null`   | Additional payload data for the app                       |
+| `date_expires` | timestamp |          | `null`   | When the notification expires                             |
+| `translations` | array     |          | `[]`     | i18n translations (`languages_code`, `title`, `body`)     |
 
 ## ❓ Frequently Asked Questions
 
@@ -498,7 +503,7 @@ Delivery tracking in `push_delivery` is preserved for history/analytics even if 
 
 ### Notifications not being delivered
 
-1. **Check VAPID keys**: Ensure `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` match and are correctly set
+1. **Check VAPID keys**: Ensure `PUSH_PUBLIC_VAPID_KEY` and `PUSH_PRIVATE_VAPID_KEY` match and are correctly set
 2. **Check user permissions**: User must have `push_enabled: true`
 3. **Check subscriptions**: User must have at least one active subscription (`is_active: true`)
 4. **Check browser console**: Look for service worker errors
@@ -510,7 +515,7 @@ Delivery tracking in `push_delivery` is preserved for history/analytics even if 
 Error: Vapid subject is not an https: or mailto: URL
 ```
 
-**Solution:** Set `VAPID_SUBJECT` or use `PUBLIC_URL` with `https://`. For development with `http://localhost`, the extension auto-converts to `mailto:`.
+**Solution:** Set `PUSH_VAPID_SUBJECT` or use `PUBLIC_URL` with `https://`. For development with `http://localhost`, the extension auto-converts to `mailto:`.
 
 ### Service Worker Not Registering
 
@@ -640,7 +645,7 @@ if (permission === "granted") {
 
 ## 🔒 Security Best Practices
 
-1. **VAPID Keys**: Keep your `VAPID_PRIVATE_KEY` secret and never expose it client-side
+1. **VAPID Keys**: Keep your `PUSH_PRIVATE_VAPID_KEY` secret and never expose it client-side
 2. **HTTPS**: Always use HTTPS in production for secure push delivery
 3. **Permissions**: Configure Directus roles to control who can send notifications
 4. **Rate Limiting**: Consider implementing rate limits on notification creation

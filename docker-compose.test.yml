@@ -10,7 +10,7 @@ services:
       KEY: "test-key"
       SECRET: "test-secret"
       ADMIN_EMAIL: "admin@example.com"
-      ADMIN_PASSWORD: "admin123"
+      ADMIN_PASSWORD: "test-password-not-a-leak"
       PUBLIC_URL: "http://directus:8055"
       STORAGE_LOCAL_ROOT: "/directus/uploads"
       EXTENSIONS_PATH: "./extensions"

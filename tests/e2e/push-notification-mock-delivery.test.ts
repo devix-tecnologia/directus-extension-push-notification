@@ -27,7 +27,7 @@ const MOCK_PUSH_ENDPOINT_BASE =
   process.env.MOCK_PUSH_ENDPOINT_BASE || "https://mock-push-server:8080";
 
 const DIRECTUS_EMAIL = "admin@example.com";
-const DIRECTUS_PASSWORD = "admin123";
+const DIRECTUS_PASSWORD = "test-password-not-a-leak";
 
 async function authenticate(context: BrowserContext) {
   const response = await context.request.post(`${DIRECTUS_URL}/auth/login`, {

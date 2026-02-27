@@ -111,7 +111,7 @@ Os testes usam o mesmo ambiente Docker configurado para os testes de integraçã
 
 - **URL Base:** `http://localhost:8055` (configurável via `DIRECTUS_URL`)
 - **Admin Email:** `admin@example.com`
-- **Admin Password:** `admin123`
+- **Admin Password:** `test-password-not-a-leak`
 - **Directus Version:** Configurável via `DIRECTUS_VERSION`
 
 ## Debugging

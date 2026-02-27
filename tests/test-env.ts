@@ -11,7 +11,7 @@ export const testEnv = {
   DIRECTUS_KEY: "255d861b-5ea1-5996-9aa3-922530ec40b1",
   DIRECTUS_SECRET: "6116487b-cda1-52c2-b5b5-c8022c45e263",
   DIRECTUS_ADMIN_EMAIL: "admin@example.com",
-  DIRECTUS_ADMIN_PASSWORD: "admin123",
+  DIRECTUS_ADMIN_PASSWORD: "test-password-not-a-leak",
   DIRECTUS_PUBLIC_URL: "http://directus:8055",
   DIRECTUS_INTERNAL_URL: "http://localhost:8055", // URL interna dentro do container
 

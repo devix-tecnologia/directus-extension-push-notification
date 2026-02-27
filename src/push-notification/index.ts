@@ -18,15 +18,23 @@ export default defineEndpoint(
   async (router, { services, database, getSchema, env, logger }) => {
     const { ItemsService } = services;
 
-    webPush.setVapidDetails(
-      env.PUSH_VAPID_SUBJECT
-        ? env.PUSH_VAPID_SUBJECT
-        : env.PUBLIC_URL?.startsWith("http://")
-          ? "mailto:admin@example.com"
-          : env.PUBLIC_URL || "mailto:admin@example.com",
-      env.PUSH_PUBLIC_VAPID_KEY,
-      env.PUSH_PRIVATE_VAPID_KEY,
-    );
+    // Configure VAPID keys only if they are provided
+    if (env.PUSH_PUBLIC_VAPID_KEY && env.PUSH_PRIVATE_VAPID_KEY) {
+      webPush.setVapidDetails(
+        env.PUSH_VAPID_SUBJECT
+          ? env.PUSH_VAPID_SUBJECT
+          : env.PUBLIC_URL?.startsWith("http://")
+            ? "mailto:admin@example.com"
+            : env.PUBLIC_URL || "mailto:admin@example.com",
+        env.PUSH_PUBLIC_VAPID_KEY,
+        env.PUSH_PRIVATE_VAPID_KEY,
+      );
+      logger.info("[Push Notification] VAPID keys configured successfully");
+    } else {
+      logger.warn(
+        "[Push Notification] ⚠️  VAPID keys not configured. Push notifications will not work. Set PUSH_PUBLIC_VAPID_KEY and PUSH_PRIVATE_VAPID_KEY environment variables.",
+      );
+    }
 
     /**
      * GET /push-notification/icon/:notification_id
@@ -118,6 +126,15 @@ export default defineEndpoint(
         filter: {
           endpoint: { _eq: subscription?.endpoint },
         },
+        fields: [
+          "id",
+          "user",
+          "endpoint",
+          "keys",
+          "user_agent",
+          "device_name",
+          "is_active",
+        ],
       });
 
       if (subscriptions.length === 0) {
@@ -199,7 +216,15 @@ export default defineEndpoint(
         filter: {
           endpoint: { _eq: subscription?.endpoint },
         },
-        fields: ["*"],
+        fields: [
+          "id",
+          "user",
+          "endpoint",
+          "keys",
+          "user_agent",
+          "device_name",
+          "is_active",
+        ],
       });
 
       if (subscriptions.length === 0) {

@@ -5,7 +5,7 @@ import fs from "fs";
  * Credenciais de admin padrão do ambiente de teste
  */
 const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_PASSWORD = "test-password-not-a-leak";
 
 // Use path relativo ao workspace
 const storageFile = `${process.cwd()}/tests/e2e/auth-storage.json`;
@@ -118,9 +118,9 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     });
   });
 
-  test("deve acessar a coleção PushNotification", async () => {
-    // Navegar diretamente para a coleção PushNotification
-    await sharedPage.goto("/admin/content/PushNotification", {
+  test("deve acessar a coleção push_subscription", async () => {
+    // Navegar diretamente para a coleção push_subscription
+    await sharedPage.goto("/admin/content/push_subscription", {
       waitUntil: "networkidle",
     });
 
@@ -128,6 +128,9 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     if (sharedPage.url().includes("/login")) {
       throw new Error("Redirecionado para login — sessão inválida");
     }
+
+    // Verificar URL correta
+    expect(sharedPage.url()).toContain("/admin/content/push_subscription");
 
     // Aguardar elementos da página de coleção (header, tabela, ou empty state)
     await sharedPage.waitForSelector(
@@ -144,7 +147,7 @@ test.describe("Push Notification Extension - E2E Tests", () => {
 
     // Screenshot para debug
     await sharedPage.screenshot({
-      path: "tests/e2e/screenshots/push-notification-collection.png",
+      path: "tests/e2e/screenshots/push-subscription-collection.png",
       fullPage: true,
     });
   });
@@ -202,47 +205,51 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     });
   });
 
-  test("deve exibir os campos corretos na coleção push_subscription", async () => {
-    // Navegar para a coleção
-    await sharedPage.goto("/admin/content/push_subscription", {
+  test("deve exibir os campos corretos no formulário de push_subscription", async () => {
+    // Navegar diretamente para o formulário de criação
+    await sharedPage.goto("/admin/content/push_subscription/+", {
       waitUntil: "networkidle",
     });
     await sharedPage.waitForTimeout(2000);
 
-    // Verificar se há um botão de criar
-    const createButton = await sharedPage
-      .locator(
-        'a[href*="/push_subscription/+"]:has-text("Create Item"), a.button[href*="/push_subscription/+"]',
-      )
-      .first();
+    // Verificar que estamos no formulário de criação
+    expect(sharedPage.url()).toContain("/push_subscription/+");
 
-    // Se não houver itens, pode ser que a tabela não apareça, então clicar em criar
-    const isCreateVisible = await createButton
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    // Tirar screenshot do formulário
+    await sharedPage.screenshot({
+      path: "tests/e2e/screenshots/push-subscription-form.png",
+      fullPage: true,
+    });
 
-    if (isCreateVisible) {
-      await createButton.click();
-      await sharedPage.waitForURL("**/admin/content/push_subscription/+");
-      await sharedPage.waitForTimeout(2000);
-
-      // Tirar screenshot do formulário
-      await sharedPage.screenshot({
-        path: "tests/e2e/screenshots/push-subscription-form.png",
-        fullPage: true,
+    // Verificar presença dos campos esperados via API (mais confiável que HTML scraping)
+    const loginResponse = await sharedPage
+      .context()
+      .request.post("/auth/login", {
+        data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
       });
+    const loginData = await loginResponse.json();
+    const accessToken = loginData.data?.access_token;
 
-      // Verificar presença dos campos esperados no formulário
-      const pageContent = await sharedPage.content();
+    const fieldsResponse = await sharedPage
+      .context()
+      .request.get("/fields/push_subscription", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    expect(fieldsResponse.ok()).toBeTruthy();
+    const fieldsData = await fieldsResponse.json();
+    const fieldNames = fieldsData.data.map((f: { field: string }) => f.field);
 
-      // Campos esperados da collection (nova estrutura)
-      const expectedFields = ["endpoint", "keys", "user", "is_active"];
-      const foundFields = expectedFields.filter((field) =>
-        pageContent.toLowerCase().includes(field.toLowerCase()),
-      );
-
-      expect(foundFields.length).toBeGreaterThan(0);
+    // Todos os campos obrigatórios devem existir
+    const requiredFields = ["id", "endpoint", "keys", "user", "is_active"];
+    for (const field of requiredFields) {
+      expect(fieldNames, `Campo '${field}' não encontrado`).toContain(field);
     }
+
+    // Verificar que não há erro de relacionamento na UI
+    const bodyText = (await sharedPage.textContent("body")) || "";
+    expect(bodyText).not.toContain(
+      "The relationship hasn't been configured correctly",
+    );
   });
 
   test("deve verificar que os endpoints de push notification estão registrados", async () => {
@@ -344,39 +351,37 @@ test.describe("Push Notification Extension - E2E Tests", () => {
     });
   });
 
-  test("deve verificar que o item criado aparece na listagem", async () => {
-    // Navegar para a coleção
+  test("deve verificar que o item criado aparece na listagem via API", async () => {
+    // Verificar via API que o item criado existe (mais confiável que UI scraping)
+    const loginResponse = await sharedPage
+      .context()
+      .request.post("/auth/login", {
+        data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+      });
+    const loginData = await loginResponse.json();
+    const accessToken = loginData.data?.access_token;
+
+    const response = await sharedPage
+      .context()
+      .request.get(
+        "/items/push_subscription?filter[endpoint][_contains]=fcm.googleapis.com",
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    // Deve haver pelo menos um item com o endpoint criado no teste anterior
+    expect(
+      data.data.length,
+      "Nenhum item com endpoint fcm.googleapis.com encontrado",
+    ).toBeGreaterThan(0);
+    expect(data.data[0].endpoint).toContain("fcm.googleapis.com");
+
+    // Navegar para a listagem e tirar screenshot
     await sharedPage.goto("/admin/content/push_subscription", {
       waitUntil: "networkidle",
     });
     await sharedPage.waitForTimeout(2000);
-
-    // Verificar se há uma tabela ou grid com items
-    const hasTable = await sharedPage
-      .locator('table, [role="table"], .v-grid')
-      .isVisible({ timeout: 10000 })
-      .catch(() => false);
-
-    if (hasTable) {
-      // Verificar se há pelo menos um item na tabela
-      const tableContent = await sharedPage.textContent(
-        'table, [role="table"], .v-grid',
-      );
-
-      // Deve conter o endpoint criado
-      expect(tableContent).toContain("fcm.googleapis.com");
-    } else {
-      // Pode estar em empty state se nenhum item foi criado
-      const emptyState = await sharedPage
-        .locator(".empty-state, .v-info")
-        .isVisible({ timeout: 5000 })
-        .catch(() => false);
-
-      // Se não há tabela nem empty state, algo está errado
-      expect(hasTable || emptyState).toBeTruthy();
-    }
-
-    // Screenshot final
     await sharedPage.screenshot({
       path: "tests/e2e/screenshots/push-subscription-final.png",
       fullPage: true,

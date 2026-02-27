@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { promisify } from "util";
@@ -224,13 +224,24 @@ async function runTests(port) {
     ? ` MOCK_PUSH_SERVER_URL=${mockServerUrl} MOCK_PUSH_ENDPOINT_BASE=${mockEndpointBase}`
     : "";
 
-  const testCommand = `DIRECTUS_URL=${directusUrl}${mockEnv} playwright test ${process.argv.slice(2).join(" ")}`;
+  const spawnEnv = {
+    ...process.env,
+    DIRECTUS_URL: directusUrl,
+  };
+
+  if (mockPort) {
+    spawnEnv.MOCK_PUSH_SERVER_URL = mockServerUrl;
+    spawnEnv.MOCK_PUSH_ENDPOINT_BASE = mockEndpointBase;
+  }
+
+  const playwrightArgs = ["playwright", "test", ...process.argv.slice(2)];
 
   return new Promise((resolve, reject) => {
-    const child = exec(testCommand);
-
-    child.stdout.on("data", (data) => process.stdout.write(data));
-    child.stderr.on("data", (data) => process.stderr.write(data));
+    const child = spawn("npx", playwrightArgs, {
+      env: spawnEnv,
+      stdio: "inherit",
+      shell: false,
+    });
 
     child.on("close", (code) => {
       if (code === 0) {

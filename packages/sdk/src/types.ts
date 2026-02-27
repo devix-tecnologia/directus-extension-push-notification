@@ -37,7 +37,7 @@ export type NotificationChannel = "push" | "email" | "sms" | "in_app";
 export type NotificationPriority = "low" | "normal" | "high" | "urgent";
 
 export interface NotificationTranslation {
-  id?: number;
+  id?: string;
   user_notification_id?: string;
   languages_code: string;
   title: string;

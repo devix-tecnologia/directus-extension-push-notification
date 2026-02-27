@@ -13,10 +13,10 @@ import { test, expect } from "@playwright/test";
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
 const DIRECTUS_EMAIL = "admin@example.com";
-const DIRECTUS_PASSWORD = "admin123";
+const DIRECTUS_PASSWORD = "test-password-not-a-leak";
 
-test.describe("Push Notification E2E Real no Browser", () => {
-  test("deve registrar subscription real e criar delivery ao enviar notificação", async ({
+test.describe("Push Notification E2E - Fluxo Completo via Browser", () => {
+  test("deve registrar subscription (real ou fallback), criar notificação e verificar delivery", async ({
     page,
     context,
   }) => {

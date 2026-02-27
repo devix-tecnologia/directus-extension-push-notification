@@ -43,7 +43,7 @@ module.exports = defineConfig({
     screenshot: "only-on-failure",
 
     /* Video on */
-    video: "retain-on-failure",
+    video: "on",
   },
 
   /* Configure projects for major browsers */

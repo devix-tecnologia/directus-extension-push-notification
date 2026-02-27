@@ -78,7 +78,7 @@ npx web-push generate-vapid-keys
 # Bad (Development only)
 KEY="dev-key"
 SECRET="dev-secret-abcdef1234567890"
-ADMIN_PASSWORD="admin123"
+ADMIN_PASSWORD="test-password-not-a-leak"
 
 # Good (Production)
 KEY="$(openssl rand -hex 16)"

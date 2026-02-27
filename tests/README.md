@@ -137,7 +137,7 @@ Configuradas em `test-env.ts`:
 ```typescript
 {
   DIRECTUS_ADMIN_EMAIL: 'admin@example.com',
-  DIRECTUS_ADMIN_PASSWORD: 'admin123',
+  DIRECTUS_ADMIN_PASSWORD: 'test-password-not-a-leak',
   PUSH_PUBLIC_VAPID_KEY: '...',
   PUSH_PRIVATE_VAPID_KEY: '...',
   // ... outras configurações

@@ -12,7 +12,7 @@ import { test, expect, type BrowserContext } from "@playwright/test";
 
 const BASE_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
 const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_PASSWORD = "test-password-not-a-leak";
 
 // Configuração do contexto
 test.use({
@@ -142,6 +142,34 @@ async function deactivateSubscription(
   });
 }
 
+// Helper para desativar TODAS as subscriptions ativas do usuário (cleanup de testes anteriores)
+async function deactivateAllSubscriptions(
+  context: BrowserContext,
+  accessToken: string,
+  userId: string,
+): Promise<void> {
+  const response = await context.request.get(
+    `/items/push_subscription?filter[user][_eq]=${userId}&filter[is_active][_eq]=true`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (response.ok()) {
+    const data = await response.json();
+    for (const sub of data.data || []) {
+      await deactivateSubscription(context, accessToken, sub.id);
+    }
+    if (data.data?.length > 0) {
+      console.log(
+        `🧹 ${data.data.length} subscription(s) antiga(s) desativada(s)`,
+      );
+    }
+  }
+}
+
 // Helper para criar uma notificação
 async function createNotification(
   context: BrowserContext,
@@ -213,6 +241,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       // Setup
       const auth = await authenticate(context);
       await setPushEnabled(context, auth.accessToken, true);
+      await deactivateAllSubscriptions(context, auth.accessToken, auth.userId);
       const subscription = await createFakeSubscription(
         context,
         auth.accessToken,
@@ -250,14 +279,16 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       console.log(`✅ ${deliveries.length} delivery(ies) criado(s)`);
 
       // Verificar detalhes do delivery (buscar o delivery correspondente à subscription criada)
-      const delivery =
-        deliveries.find(
-          (d) =>
-            d.subscription === subscription.id ||
-            String(d.subscription) === String(subscription.id),
-        ) || deliveries[0]!;
-      expect(delivery.notification).toBe(notificationIdStr);
-      expect(String(delivery.subscription)).toBe(String(subscription.id));
+      const delivery = deliveries.find(
+        (d) =>
+          d.subscription === subscription.id ||
+          String(d.subscription) === String(subscription.id),
+      );
+      expect(
+        delivery,
+        `Nenhum delivery encontrado para subscription ${subscription.id}. Deliveries: ${JSON.stringify(deliveries.map((d) => d.subscription))}`,
+      ).toBeDefined();
+      expect(delivery!.notification).toBe(notificationIdStr);
 
       // O status pode ser 'queued', 'sent', 'delivered' ou 'failed'
       // (failed é esperado porque usamos endpoint fake do FCM)
@@ -269,8 +300,8 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
         "sending",
         "read",
         "expired",
-      ]).toContain(delivery.status);
-      console.log(`📊 Status do delivery: ${delivery.status}`);
+      ]).toContain(delivery!.status);
+      console.log(`📊 Status do delivery: ${delivery!.status}`);
 
       // Cleanup
       await deactivateSubscription(context, auth.accessToken, subscription.id);
@@ -288,6 +319,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       // Setup
       const auth = await authenticate(context);
       await setPushEnabled(context, auth.accessToken, true);
+      await deactivateAllSubscriptions(context, auth.accessToken, auth.userId);
       const subscription = await createFakeSubscription(
         context,
         auth.accessToken,
@@ -348,6 +380,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       // Setup - criar subscription mas desabilitar push
       const auth = await authenticate(context);
       await setPushEnabled(context, auth.accessToken, true);
+      await deactivateAllSubscriptions(context, auth.accessToken, auth.userId);
       const subscription = await createFakeSubscription(
         context,
         auth.accessToken,
@@ -398,6 +431,7 @@ test.describe.serial("Push Notification - Real Delivery Test", () => {
       // Setup
       const auth = await authenticate(context);
       await setPushEnabled(context, auth.accessToken, true);
+      await deactivateAllSubscriptions(context, auth.accessToken, auth.userId);
       const subscription = await createFakeSubscription(
         context,
         auth.accessToken,

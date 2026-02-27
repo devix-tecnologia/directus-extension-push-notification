@@ -113,7 +113,7 @@ pnpm test:e2e:dev
 
 # 4. If needed, inspect manually
 # Access http://localhost:8055
-# Login: admin@example.com / admin123
+# Login: admin@example.com / test-password-not-a-leak
 
 # 5. Stop environment when finished
 pnpm docker:stop
