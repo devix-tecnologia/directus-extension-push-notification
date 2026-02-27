@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-27
+
+### Added
+
+- ✨ **Icon field** (`icon`) for notifications — supports Directus file references for rich notification icons
+- ✨ **Internationalization (i18n)** for notification `title` and `body`
+  - `notification_translation` junction collection with `languages_code` support
+  - Automatic language resolution based on user's configured language
+  - Fallback chain: user language → default language → original notification fields
+- ✨ **TypeScript SDK** (`@anthropic/push-notification-sdk`)
+  - Typed API client for subscriptions, notifications, and deliveries
+  - Browser subscription helpers with VAPID key support
+  - Translation utilities for notification content
+  - Full TypeScript type definitions for all collections
+- ✨ `action_url` field for deep-linking from notification clicks
+- ✨ `resolve-translation` module for server-side i18n resolution
+- ✨ `resolve-icon` module for icon URL resolution
+
+### Fixed
+
+- 🐛 Mock push server route ordering — specific error routes (`/error/410`, `/error/404`) now correctly matched before wildcard
+- 🐛 Integration test isolation with `deactivateAllSubscriptions` helper
+- 🐛 Test assertions updated for async delivery state handling
+- 🐛 Auth password and `push_enabled` configuration in test setup
+- 🐛 Fixed `directus-state.json` typo (`is_generated` field)
+
+### Changed
+
+- 🔄 Updated all dependencies to latest versions
+- 🔄 Improved Docker Compose test infrastructure with per-suite containers
+- 🔄 Enhanced E2E test suite (32 tests passing)
+- 🔄 Added comprehensive integration test suite (30 tests)
+- 🔄 Added unit tests for `resolve-translation` and `resolve-icon` (29 tests)
+
+---
+
 ## [0.2.0] - 2025-01-20
 
 ### ⚠️ BREAKING CHANGES
@@ -189,8 +225,9 @@ After running the migration:
 
 - 🎉 Initial development release
 
-[0.2.0]: https://github.com/your-org/directus-extension-push-notification/compare/v0.1.3...v0.2.0
-[0.1.3]: https://github.com/your-org/directus-extension-push-notification/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/your-org/directus-extension-push-notification/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/your-org/directus-extension-push-notification/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/your-org/directus-extension-push-notification/releases/tag/v0.1.0
+[0.4.0]: https://github.com/devix-tecnologia/directus-extension-push-notification/compare/v0.3.0...v0.4.0
+[0.2.0]: https://github.com/devix-tecnologia/directus-extension-push-notification/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/devix-tecnologia/directus-extension-push-notification/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/devix-tecnologia/directus-extension-push-notification/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/devix-tecnologia/directus-extension-push-notification/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/devix-tecnologia/directus-extension-push-notification/releases/tag/v0.1.0
