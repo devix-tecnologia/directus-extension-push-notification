@@ -95,7 +95,7 @@ class PushNotificationHandler implements PushEventHandler {
       badge: "/admin/favicon.ico",
       tag: data.notification_id || "directus-notification",
       data: {
-        url: data.action_url || "/admin/notifications",
+        url: data.action_url || "/admin",
         notification_id: data.notification_id,
         delivery_id: data.delivery_id,
       },
@@ -133,9 +133,9 @@ class PushNotificationHandler implements PushEventHandler {
         });
     }
 
-    // Abre o painel de notificações do Directus
+    // Abre o dashboard do Directus
     await self.clients.openWindow(
-      event.notification.data?.url || "/admin/notifications",
+      event.notification.data?.url || "/admin",
     );
   }
 }
