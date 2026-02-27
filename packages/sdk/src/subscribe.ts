@@ -18,9 +18,7 @@ import type {
  */
 export function vapidKeyToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) {
@@ -132,7 +130,9 @@ export async function subscribe(
     } else {
       pushSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKeyToUint8Array(vapidPublicKey) as BufferSource,
+        applicationServerKey: vapidKeyToUint8Array(
+          vapidPublicKey,
+        ) as BufferSource,
       });
     }
   } catch (err) {
@@ -196,10 +196,7 @@ export async function unsubscribe(
 ): Promise<{ success: boolean; error?: string }> {
   const _fetch = fetchFn ?? globalThis.fetch;
 
-  if (
-    typeof navigator === "undefined" ||
-    !("serviceWorker" in navigator)
-  ) {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
     return { success: false, error: "Service Worker not available" };
   }
 

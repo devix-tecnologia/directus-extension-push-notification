@@ -147,7 +147,7 @@ async function waitForDirectus(
           "/auth/login",
           {
             email: "admin@example.com",
-            password: "test-password-ci-only",
+            password: "admin123",
           },
           undefined,
           testSuiteId,
@@ -173,7 +173,7 @@ async function getAccessToken(testSuiteId: string): Promise<string> {
   const containerName = `directus-push-notification-${testSuiteId}-${process.env.DIRECTUS_VERSION || "latest"}`;
 
   const { stdout } = await execAsync(
-    `docker exec ${containerName} wget -qO- --post-data='{"email":"admin@example.com","password":"test-password-ci-only"}' --header='Content-Type:application/json' http://127.0.0.1:8055/auth/login`,
+    `docker exec ${containerName} wget -qO- --post-data='{"email":"admin@example.com","password":"admin123"}' --header='Content-Type:application/json' http://127.0.0.1:8055/auth/login`,
   );
 
   const response = JSON.parse(stdout);

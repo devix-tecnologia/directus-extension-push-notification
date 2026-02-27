@@ -322,6 +322,39 @@ export function wait(ms: number): Promise<void> {
 }
 
 /**
+ * Desativa todas as subscriptions ativas de um usuário.
+ * Útil para evitar acúmulo de subscriptions entre testes.
+ */
+export async function deactivateAllSubscriptions(
+  userId: string,
+  testSuiteId?: string,
+): Promise<void> {
+  const response = await dockerHttpRequest(
+    "GET",
+    `/items/push_subscription?filter[user][_eq]=${userId}&filter[is_active][_eq]=true&limit=-1`,
+    undefined,
+    {
+      Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
+    },
+    testSuiteId,
+  );
+
+  const subs = (response.data as Array<{ id: string }>) || [];
+
+  for (const sub of subs) {
+    await dockerHttpRequest(
+      "PATCH",
+      `/items/push_subscription/${sub.id}`,
+      { is_active: false },
+      {
+        Authorization: `Bearer ${String(process.env.DIRECTUS_ACCESS_TOKEN)}`,
+      },
+      testSuiteId,
+    );
+  }
+}
+
+/**
  * Busca o user ID do admin
  */
 export async function getAdminUserId(testSuiteId?: string): Promise<string> {

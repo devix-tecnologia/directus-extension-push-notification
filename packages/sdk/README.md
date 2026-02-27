@@ -27,8 +27,16 @@ const result = await client.sendNotification({
   body: "Você tem uma nova mensagem",
   priority: "high",
   translations: [
-    { languages_code: "en-US", title: "New message", body: "You have a new message" },
-    { languages_code: "pt-BR", title: "Nova mensagem", body: "Você tem uma nova mensagem" },
+    {
+      languages_code: "en-US",
+      title: "New message",
+      body: "You have a new message",
+    },
+    {
+      languages_code: "pt-BR",
+      title: "Nova mensagem",
+      body: "Você tem uma nova mensagem",
+    },
   ],
 });
 
@@ -42,7 +50,11 @@ const vapidKey = await client.getVapidPublicKey();
 ### Subscribe Helper (Browser / Frontend)
 
 ```ts
-import { subscribe, unsubscribe, isPushSupported } from "@anthropic/push-notification-sdk/subscribe";
+import {
+  subscribe,
+  unsubscribe,
+  isPushSupported,
+} from "@anthropic/push-notification-sdk/subscribe";
 
 if (isPushSupported()) {
   const result = await subscribe({
@@ -79,17 +91,20 @@ const resolved = resolveTranslation({
 ### Apenas Tipos
 
 ```ts
-import type { UserNotification, PushDelivery } from "@anthropic/push-notification-sdk/types";
+import type {
+  UserNotification,
+  PushDelivery,
+} from "@anthropic/push-notification-sdk/types";
 ```
 
 ## Exports
 
-| Path | Conteúdo |
-|---|---|
-| `@anthropic/push-notification-sdk` | Tudo (tipos, client, subscribe, translation) |
-| `@anthropic/push-notification-sdk/types` | Apenas tipos |
-| `@anthropic/push-notification-sdk/client` | API client |
-| `@anthropic/push-notification-sdk/subscribe` | Browser subscribe helpers |
+| Path                                         | Conteúdo                                     |
+| -------------------------------------------- | -------------------------------------------- |
+| `@anthropic/push-notification-sdk`           | Tudo (tipos, client, subscribe, translation) |
+| `@anthropic/push-notification-sdk/types`     | Apenas tipos                                 |
+| `@anthropic/push-notification-sdk/client`    | API client                                   |
+| `@anthropic/push-notification-sdk/subscribe` | Browser subscribe helpers                    |
 
 ## Requisitos
 

@@ -55,9 +55,9 @@ export default defineEndpoint(
 
         let notification: Record<string, unknown>;
         try {
-          notification = await itemsService.readOne(notificationId, {
+          notification = (await itemsService.readOne(notificationId, {
             fields: ["icon", "icon_url"],
-          }) as Record<string, unknown>;
+          })) as Record<string, unknown>;
         } catch {
           logger.warn(
             `[Push Notification] Icon request for non-existent notification: ${notificationId}`,
@@ -89,9 +89,7 @@ export default defineEndpoint(
         res.redirect("/admin/favicon.ico");
       } catch (error: unknown) {
         const err = error as { message?: string };
-        logger.error(
-          `[Push Notification] Error serving icon: ${err.message}`,
-        );
+        logger.error(`[Push Notification] Error serving icon: ${err.message}`);
         res.redirect("/admin/favicon.ico");
       }
     });

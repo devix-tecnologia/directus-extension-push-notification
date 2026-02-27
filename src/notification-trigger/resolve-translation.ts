@@ -33,7 +33,9 @@ export interface ResolvedTranslation {
   body: string;
 }
 
-export function resolveTranslation(source: TranslationSource): ResolvedTranslation {
+export function resolveTranslation(
+  source: TranslationSource,
+): ResolvedTranslation {
   const {
     title,
     body,

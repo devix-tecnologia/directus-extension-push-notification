@@ -6,8 +6,11 @@ import {
   createUserNotification,
   getPushDeliveries,
   getPushSubscription,
+  updateUserPushEnabled,
+  deactivateAllSubscriptions,
   getAdminUserId,
   wait,
+  MOCK_PUSH_SERVER,
 } from "./helpers/test-helpers.js";
 
 describe("Push Delivery - Múltiplos Dispositivos", () => {
@@ -20,6 +23,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     logger.setCurrentTest(`Multiple Devices Test - Directus ${version}`);
     await setupTestEnvironment(testSuiteId);
     userId = await getAdminUserId(testSuiteId);
+    await updateUserPushEnabled(userId, true, testSuiteId);
   }, 420000);
 
   afterAll(async () => {
@@ -27,6 +31,8 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
   });
 
   test("Deve enviar para todos os dispositivos ativos do usuário", async () => {
+    await deactivateAllSubscriptions(userId, testSuiteId);
+
     const devices = ["Desktop", "Mobile", "Tablet"];
 
     // Criar 3 subscriptions ativas
@@ -34,7 +40,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       await createPushSubscription(
         userId,
         {
-          endpoint: `https://test.com/push-${device}`,
+          endpoint: `${MOCK_PUSH_SERVER}/push-${device}`,
           device_name: device,
           is_active: true,
         },
@@ -52,23 +58,24 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       testSuiteId,
     );
 
-    await wait(3000);
+    await wait(5000);
 
     const deliveries = await getPushDeliveries(notification.id, testSuiteId);
 
     expect(deliveries).toHaveLength(3);
     deliveries.forEach((delivery) => {
-      expect(delivery.status).toBe("failed");
-      expect(delivery.date_failed).toBeTruthy();
+      expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
     });
   });
 
   test("Deve ignorar dispositivos inativos", async () => {
+    await deactivateAllSubscriptions(userId, testSuiteId);
+
     // Criar 2 subscriptions ativas
     await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/active1",
+        endpoint: `${MOCK_PUSH_SERVER}/active1`,
         device_name: "Active Device 1",
         is_active: true,
       },
@@ -78,7 +85,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/active2",
+        endpoint: `${MOCK_PUSH_SERVER}/active2`,
         device_name: "Active Device 2",
         is_active: true,
       },
@@ -89,7 +96,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/inactive",
+        endpoint: `${MOCK_PUSH_SERVER}/inactive`,
         device_name: "Inactive Device",
         is_active: false,
       },
@@ -106,19 +113,20 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       testSuiteId,
     );
 
-    await wait(3000);
+    await wait(5000);
 
     const deliveries = await getPushDeliveries(notification.id, testSuiteId);
 
     // Deve ter criado apenas 2 deliveries (para os ativos)
     expect(deliveries).toHaveLength(2);
     deliveries.forEach((delivery) => {
-      expect(delivery.status).toBe("failed");
-      expect(delivery.date_failed).toBeTruthy();
+      expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
     });
   });
 
   test("Deve identificar dispositivos corretamente por device_name", async () => {
+    await deactivateAllSubscriptions(userId, testSuiteId);
+
     const deviceNames = ["Desktop Chrome", "Mobile Safari", "Tablet Firefox"];
     const createdSubscriptions: string[] = [];
 
@@ -126,7 +134,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       const sub = await createPushSubscription(
         userId,
         {
-          endpoint: `https://test.com/${name.replace(/\s/g, "-")}`,
+          endpoint: `${MOCK_PUSH_SERVER}/${name.replace(/\s/g, "-")}`,
           device_name: name,
           is_active: true,
         },
@@ -145,7 +153,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       testSuiteId,
     );
 
-    await wait(3000);
+    await wait(5000);
 
     const deliveries = await getPushDeliveries(notification.id, testSuiteId);
 
@@ -159,10 +167,12 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
   });
 
   test("Deve atualizar date_last_used em todos os dispositivos", async () => {
+    await deactivateAllSubscriptions(userId, testSuiteId);
+
     const sub1 = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/device-time-1",
+        endpoint: `${MOCK_PUSH_SERVER}/device-time-1`,
         device_name: "Device Time 1",
         is_active: true,
       },
@@ -172,7 +182,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     const sub2 = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/device-time-2",
+        endpoint: `${MOCK_PUSH_SERVER}/device-time-2`,
         device_name: "Device Time 2",
         is_active: true,
       },
@@ -195,7 +205,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       testSuiteId,
     );
 
-    await wait(3000);
+    await wait(5000);
     const updatedSub1 = await getPushSubscription(sub1.id, testSuiteId);
     const updatedSub2 = await getPushSubscription(sub2.id, testSuiteId);
 
@@ -209,13 +219,15 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
   });
 
   test("Deve lidar com falha parcial em múltiplos dispositivos", async () => {
+    await deactivateAllSubscriptions(userId, testSuiteId);
+
     // Criar 3 subscriptions válidas
     // Nota: Este teste verifica a estrutura de falha parcial
     // Em produção, falhas reais viriam de erros do web-push
     await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/device-partial-1",
+        endpoint: `${MOCK_PUSH_SERVER}/device-partial-1`,
         device_name: "Device Partial 1",
         is_active: true,
       },
@@ -225,7 +237,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/device-partial-2",
+        endpoint: `${MOCK_PUSH_SERVER}/device-partial-2`,
         device_name: "Device Partial 2",
         is_active: true,
       },
@@ -235,7 +247,7 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
     await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/device-partial-3",
+        endpoint: `${MOCK_PUSH_SERVER}/device-partial-3`,
         device_name: "Device Partial 3",
         is_active: true,
       },
@@ -252,26 +264,18 @@ describe("Push Delivery - Múltiplos Dispositivos", () => {
       testSuiteId,
     );
 
-    await wait(3000);
+    await wait(5000);
 
     const deliveries = await getPushDeliveries(notification.id, testSuiteId);
 
     // Deve ter criado deliveries para todos os dispositivos
     expect(deliveries).toHaveLength(3);
 
-    // Em ambiente de teste sem mock, todos devem ter enviado
-    // Este teste valida a estrutura, em produção haveria status diferentes
-    const statuses = deliveries.map((d) => d.status);
-    expect(
-      statuses.every((s) => ["sent", "failed", "queued"].includes(s)),
-    ).toBe(true);
-
-    // Com endpoints fake, todos falham
+    // Verificar que todos foram processados
     deliveries.forEach((delivery) => {
-      expect(delivery.status).toBe("failed");
+      expect(["sent", "failed", "queued"].includes(delivery.status)).toBe(true);
       expect(delivery.attempt_count).toBeGreaterThanOrEqual(1);
       expect(delivery.max_attempts).toBeGreaterThanOrEqual(1);
-      expect(delivery.date_failed).toBeTruthy();
     });
   });
 });

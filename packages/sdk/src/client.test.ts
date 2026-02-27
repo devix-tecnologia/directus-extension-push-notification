@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  PushNotificationClient,
-  PushNotificationSDKError,
-} from "./client.js";
+import { PushNotificationClient, PushNotificationSDKError } from "./client.js";
 
 function mockFetch(
   status: number,
@@ -202,7 +199,8 @@ describe("PushNotificationClient", () => {
       });
 
       const callBody = JSON.parse(
-        (fetchFn as ReturnType<typeof vi.fn>).mock.calls[0]?.[1]?.body as string,
+        (fetchFn as ReturnType<typeof vi.fn>).mock.calls[0]?.[1]
+          ?.body as string,
       );
       expect(callBody.translations).toHaveLength(1);
       expect(callBody.translations[0].languages_code).toBe("pt-BR");
@@ -260,11 +258,13 @@ describe("PushNotificationClient", () => {
         fetch: fetchFn,
       });
 
-      await expect(client.sendNotification({
-        user: "u",
-        title: "t",
-        body: "b",
-      })).rejects.toThrow(PushNotificationSDKError);
+      await expect(
+        client.sendNotification({
+          user: "u",
+          title: "t",
+          body: "b",
+        }),
+      ).rejects.toThrow(PushNotificationSDKError);
     });
 
     it("deve incluir status e body no erro", async () => {

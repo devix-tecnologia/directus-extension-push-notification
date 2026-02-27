@@ -9,8 +9,10 @@ import {
   createPushSubscription,
   createUserNotification,
   getPushDeliveries,
+  updateUserPushEnabled,
   getAdminUserId,
   wait,
+  MOCK_PUSH_SERVER,
 } from "./helpers/test-helpers.js";
 
 describe("Debug - Testar Hook", () => {
@@ -23,6 +25,7 @@ describe("Debug - Testar Hook", () => {
     logger.setCurrentTest(`Debug Hook Test - Directus ${version}`);
     await setupTestEnvironment(testSuiteId);
     userId = await getAdminUserId(testSuiteId);
+    await updateUserPushEnabled(userId, true, testSuiteId);
   }, 420000);
 
   afterAll(async () => {
@@ -50,7 +53,7 @@ describe("Debug - Testar Hook", () => {
     const subscription = await createPushSubscription(
       userId,
       {
-        endpoint: "https://test.com/debug-push",
+        endpoint: `${MOCK_PUSH_SERVER}/debug-push`,
       },
       testSuiteId,
     );

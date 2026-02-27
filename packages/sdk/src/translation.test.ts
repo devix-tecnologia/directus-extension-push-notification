@@ -46,9 +46,7 @@ describe("resolveTranslation (SDK)", () => {
     const result = resolveTranslation({
       title: "Default",
       body: "Default body",
-      translations: [
-        { languages_code: "PT-BR", title: "Olá", body: "Mundo" },
-      ],
+      translations: [{ languages_code: "PT-BR", title: "Olá", body: "Mundo" }],
       user_language: "pt-br",
     });
 
@@ -72,9 +70,7 @@ describe("resolveTranslation (SDK)", () => {
     const result = resolveTranslation({
       title: "Default",
       body: "Default body",
-      translations: [
-        { languages_code: "pt-BR", title: "Olá", body: "Mundo" },
-      ],
+      translations: [{ languages_code: "pt-BR", title: "Olá", body: "Mundo" }],
       user_language: "de-DE",
       fallback_language: "pt-BR",
     });

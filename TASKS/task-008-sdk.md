@@ -35,15 +35,15 @@ packages/sdk/
 
 ### O que o SDK expõe
 
-| Export | Descrição |
-|---|---|
-| `PushNotificationClient` | API client com métodos: `registerSubscription`, `unregisterSubscription`, `getSubscriptions`, `sendNotification`, `getVapidPublicKey` |
-| `subscribe()` / `unsubscribe()` | Helpers para subscription no browser (SW registration, permissão, registerão no backend) |
-| `isPushSupported()` | Detecta suporte a Push API no ambiente |
-| `detectDeviceName()` | Detecta nome do dispositivo via User-Agent |
-| `vapidKeyToUint8Array()` | Converte VAPID key de base64url para `Uint8Array` |
-| `resolveTranslation()` | Resolve title/body no idioma do usuário com fallback |
-| Todos os tipos | `UserNotification`, `PushSubscription`, `PushDelivery`, `SendNotificationRequest`, etc. |
+| Export                          | Descrição                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `PushNotificationClient`        | API client com métodos: `registerSubscription`, `unregisterSubscription`, `getSubscriptions`, `sendNotification`, `getVapidPublicKey` |
+| `subscribe()` / `unsubscribe()` | Helpers para subscription no browser (SW registration, permissão, registerão no backend)                                              |
+| `isPushSupported()`             | Detecta suporte a Push API no ambiente                                                                                                |
+| `detectDeviceName()`            | Detecta nome do dispositivo via User-Agent                                                                                            |
+| `vapidKeyToUint8Array()`        | Converte VAPID key de base64url para `Uint8Array`                                                                                     |
+| `resolveTranslation()`          | Resolve title/body no idioma do usuário com fallback                                                                                  |
+| Todos os tipos                  | `UserNotification`, `PushSubscription`, `PushDelivery`, `SendNotificationRequest`, etc.                                               |
 
 ### Características
 

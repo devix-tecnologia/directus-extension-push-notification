@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { vapidKeyToUint8Array, detectDeviceName, isPushSupported } from "./subscribe.js";
+import {
+  vapidKeyToUint8Array,
+  detectDeviceName,
+  isPushSupported,
+} from "./subscribe.js";
 
 describe("subscribe helpers", () => {
   describe("vapidKeyToUint8Array", () => {
@@ -43,12 +47,12 @@ describe("subscribe helpers", () => {
     it("deve retornar 'Unknown Device' quando navigator não existe", () => {
       // Em ambiente node, navigator é undefined
       const originalNavigator = globalThis.navigator;
-      // @ts-expect-error -- testing without navigator
+      // @ts-ignore -- testing without navigator
       delete globalThis.navigator;
 
       expect(detectDeviceName()).toBe("Unknown Device");
 
-      // @ts-expect-error -- restore
+      // @ts-ignore -- restore
       globalThis.navigator = originalNavigator;
     });
   });

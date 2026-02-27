@@ -6,6 +6,7 @@ import {
   createUserNotification,
   createLanguage,
   updateUserLanguage,
+  updateUserPushEnabled,
   getPushDeliveries,
   getNotificationTranslations,
   getAdminUserId,
@@ -23,6 +24,7 @@ describe("Push Delivery - Fluxo de Tradução (i18n)", () => {
     logger.setCurrentTest(`Translation Flow Test - Directus ${version}`);
     await setupTestEnvironment(testSuiteId);
     userId = await getAdminUserId(testSuiteId);
+    await updateUserPushEnabled(userId, true, testSuiteId);
 
     // Criar idiomas necessários para os testes
     try {

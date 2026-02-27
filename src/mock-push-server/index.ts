@@ -7,7 +7,27 @@ import { defineEndpoint } from "@directus/extensions-sdk";
 export default defineEndpoint({
   id: "mock-push-server",
   handler: (router, { logger }) => {
-    // Endpoint principal que aceita qualquer POST
+    // Endpoints de erro devem vir ANTES do wildcard catch-all
+
+    // Endpoint para simular erro 410 Gone
+    router.post("/error/410", (_req, res) => {
+      logger.info("[Mock Push Server] Simulating 410 Gone");
+      res.status(410).json({
+        error: "Gone",
+        message: "The subscription has expired or is no longer valid",
+      });
+    });
+
+    // Endpoint para simular erro 404
+    router.post("/error/404", (_req, res) => {
+      logger.info("[Mock Push Server] Simulating 404 Not Found");
+      res.status(404).json({
+        error: "Not Found",
+        message: "The endpoint was not found",
+      });
+    });
+
+    // Endpoint principal que aceita qualquer POST (catch-all, deve ser o último)
     router.post("/*", (req, res) => {
       const body = req.body;
       const headers = req.headers;
@@ -27,24 +47,6 @@ export default defineEndpoint({
         success: true,
         messageId: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         timestamp: new Date().toISOString(),
-      });
-    });
-
-    // Endpoint para simular erro 410 Gone
-    router.post("/error/410", (_req, res) => {
-      logger.info("[Mock Push Server] Simulating 410 Gone");
-      res.status(410).json({
-        error: "Gone",
-        message: "The subscription has expired or is no longer valid",
-      });
-    });
-
-    // Endpoint para simular erro 404
-    router.post("/error/404", (_req, res) => {
-      logger.info("[Mock Push Server] Simulating 404 Not Found");
-      res.status(404).json({
-        error: "Not Found",
-        message: "The endpoint was not found",
       });
     });
 

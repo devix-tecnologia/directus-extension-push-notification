@@ -42,10 +42,7 @@ export type {
 } from "./types.js";
 
 // Client
-export {
-  PushNotificationClient,
-  PushNotificationSDKError,
-} from "./client.js";
+export { PushNotificationClient, PushNotificationSDKError } from "./client.js";
 
 // Subscribe helpers
 export {

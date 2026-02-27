@@ -17,11 +17,13 @@ GET /push-notification/icon/:notification_id
 ```
 
 Comportamento:
+
 1. Se a notificação tem `icon` (arquivo no Directus) → redirect para `/assets/{id}?width=192&height=192&fit=cover&quality=80` (transformação automática para 192×192px)
 2. Senão, se tem `icon_url` (URL externa) → redirect 302 para a URL
 3. Senão → redirect para `/admin/favicon.ico`
 
 **Vantagens:**
+
 - Nenhum arquivo do Directus precisa ficar público
 - Transformação de imagem aplicada automaticamente
 - Service worker acessa um único URL público sem autenticação
