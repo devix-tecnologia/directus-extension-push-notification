@@ -186,13 +186,20 @@ export default defineHook(
             logger.debug(
               `[DB Configuration] Creating relation '${relation.collection}.${relation.field}' -> ${relation.related_collection}`,
             );
-            await relationsService.createOne(relation);
+            
+            // Remove constraint_name if null to avoid conflicts
+            const relationData = { ...relation };
+            if (relationData.schema?.constraint_name === null) {
+              delete relationData.schema.constraint_name;
+            }
+            
+            await relationsService.createOne(relationData);
             relationsCreated++;
             logger.info(
               `[DB Configuration] Relation '${relation.collection}.${relation.field}' created successfully`,
             );
           } catch (e: unknown) {
-            const error = e as { message?: string };
+            const error = e as { message?: string; code?: string; stack?: string };
             if (
               error?.message &&
               (error.message.includes("already exists") ||
@@ -202,9 +209,14 @@ export default defineHook(
                 `[DB Configuration] Relation '${relation.collection}.${relation.field}' already exists`,
               );
             } else {
-              logger.warn(
-                `[DB Configuration] Could not create relation '${relation.collection}.${relation.field}': ${error?.message}`,
+              logger.error(
+                `[DB Configuration] FAILED to create relation '${relation.collection}.${relation.field}' -> ${relation.related_collection}`,
               );
+              logger.error(`[DB Configuration] Error message: ${error?.message}`);
+              logger.error(`[DB Configuration] Error code: ${error?.code}`);
+              if (error?.stack) {
+                logger.error(`[DB Configuration] Stack trace: ${error.stack}`);
+              }
               // Não fazer throw - continuar com outras relações
             }
           }
