@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ⚠ BREAKING CHANGES
+
+- 💥 **The `languages` collection was renamed to `language`** (singular), the Devix
+  Tecnologia convention already used by `directus-extension-inframe`. The legacy
+  `languages` collection is **dropped** during the automatic migration.
+  - Data is migrated on boot: rows missing in `language` are copied by `code`,
+    and rows already present in `language` are never overwritten.
+  - The `user_notification_translations.languages_code` relation is repointed to
+    `language` through the `RelationsService`.
+  - The drop is skipped (with a warning) when another collection still
+    references `languages`.
+  - **Migration required:** back up your database and replace every
+    `/items/languages` call with `/items/language`.
+  - The `user_notification_translations.languages_code` **field name is unchanged**.
+
 ## [0.4.0] - 2026-02-27
 
 ### Added
