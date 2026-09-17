@@ -1,8 +1,8 @@
 # Task 006 — Campo Icon como relação com directus_files
 
-Status: done
-Type: feature
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feature
+- Assignee: Sidarta Veloso
 
 ## Description
 
@@ -48,19 +48,19 @@ Esta task **deve ser implementada usando TDD (Test-Driven Development)**. Os tes
 
 ## Tasks
 
-- [ ] Escrever testes para o caso 1 (icon via directus_files)
-- [ ] Escrever testes para o caso 2 (icon via URL externa)
-- [ ] Adicionar campo `icon` (uuid, M2O → `directus_files`) em `directus-state.json`
-- [ ] Adicionar relação M2O `icon` → `directus_files` em `directus-state.json`
-- [ ] Configurar interface `file-image` com opções de validação (apenas imagens)
-- [ ] Configurar display `image` para preview na listagem
-- [ ] Atualizar `_types.ts` — adicionar campo `icon?: string` em `UserNotification`
-- [ ] Atualizar `notification-trigger/index.ts` — resolver `icon` para URL `/assets/{id}`
-- [ ] Atualizar `service-worker.ts` — lógica de prioridade (icon > icon_url > fallback)
-- [ ] Atualizar `PushPayload` type para incluir `icon`
-- [ ] Adicionar traduções i18n para o campo `icon` (en-US, pt-BR)
-- [ ] Verificar que todos os testes passam
-- [ ] Rodar `pnpm validate` sem erros
+- [x] Escrever testes para o caso 1 (icon via directus_files) — `tests/unit/resolve-icon.test.ts`, bloco "Caso 1"
+- [x] Escrever testes para o caso 2 (icon via URL externa) — `tests/unit/resolve-icon.test.ts`, bloco "Caso 2"
+- [x] Adicionar campo `icon` (uuid, M2O → `directus_files`) em `directus-state.json`
+- [x] Adicionar relação M2O `icon` → `directus_files` em `directus-state.json`
+- [x] Configurar interface `file-image` com opções de validação (apenas imagens)
+- [x] Configurar display `image` para preview na listagem
+- [x] Atualizar `_types.ts` — adicionar campo `icon?: string` em `UserNotification`
+- [x] Atualizar `notification-trigger/index.ts` — resolver `icon` para a URL do ícone (via `resolveIconUrl`, em `resolve-icon.ts`). Resolve para o endpoint dedicado `/push-notification/icon/:notification_id`, que por sua vez redireciona para `/assets/{id}?width=192&height=192&...`, conforme descrito acima — e não para `/assets/{id}` direto
+- [x] Atualizar `service-worker.ts` — lógica de prioridade (icon > icon_url > fallback). A prioridade entre `icon` e `icon_url` ficou no servidor, em `resolve-icon.ts`; o service worker recebe a URL já resolvida em `icon_url` e aplica só o fallback final (`data.icon_url || "/admin/favicon.ico"`)
+- [ ] Atualizar `PushPayload` type para incluir `icon` — adiado: desnecessário no desenho final. O servidor resolve `icon` e `icon_url` numa única URL antes de montar o payload, então `PushPayload` carrega apenas `icon_url`. Incluir `icon` exporia o ID do arquivo ao service worker sem nenhum uso
+- [x] Adicionar traduções i18n para o campo `icon` (en-US, pt-BR)
+- [x] Verificar que todos os testes passam — 41 testes unitários e 42 e2e verdes em 17/09/2026
+- [x] Rodar `pnpm validate` sem erros — "Extension is valid"
 
 ## Referências
 

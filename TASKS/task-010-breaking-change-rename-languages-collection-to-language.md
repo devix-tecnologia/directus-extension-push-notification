@@ -1,8 +1,8 @@
 # Task 010 — BREAKING CHANGE: rename languages collection to language
 
-Status: done
-Type: refactor
-Assignee: Sidarta Veloso
+- Status: done
+- Type: refactor
+- Assignee: Sidarta Veloso
 
 ---
 

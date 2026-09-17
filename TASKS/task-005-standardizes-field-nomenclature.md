@@ -1,8 +1,8 @@
 # Task 005 — Standardize Field Nomenclature
 
-Status: in-progress
-Type: refactor
-Assignee: Sidarta Veloso
+- Status: in-progress
+- Type: refactor
+- Assignee: Sidarta Veloso
 
 ## Description
 
