@@ -2207,7 +2207,7 @@
         "special": ["translations"],
         "interface": "translations",
         "options": {
-          "languageField": "languages_code",
+          "languageField": "code",
           "languageDirectionField": "direction",
           "defaultLanguage": "en-US",
           "userLanguage": true
@@ -2215,7 +2215,7 @@
         "display": "translations",
         "display_options": {
           "template": "{{title}}",
-          "languageField": "languages_code",
+          "languageField": "code",
           "defaultLanguage": "en-US",
           "userLanguage": true
         },
