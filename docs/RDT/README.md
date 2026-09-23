@@ -4,9 +4,9 @@ Este diretório contém os Registros de Decisão Técnica (RDT) do projeto. Cada
 
 ## Índice de Decisões
 
-| ID                                                    | Título                                                               | Status   | Data       |
-| ----------------------------------------------------- | -------------------------------------------------------------------- | -------- | ---------- |
-| [001](rdt-001-icone-externo-url-direta-no-payload.md) | Ícone de URL Externa Vai Direto no Payload, sem Desvio pelo Directus | Proposto | 2026-09-17 |
+| ID                                                    | Título                                                               | Status | Data       |
+| ----------------------------------------------------- | -------------------------------------------------------------------- | ------ | ---------- |
+| [001](rdt-001-icone-externo-url-direta-no-payload.md) | Ícone de URL Externa Vai Direto no Payload, sem Desvio pelo Directus | Aceito | 2026-09-17 |
 
 ## Status Possíveis
 

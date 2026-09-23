@@ -2,7 +2,8 @@
 
 - Status: done
 - Type: feature
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
+- Priority: 600
 
 ## Description
 
@@ -42,7 +43,7 @@ Esta task **deve ser implementada usando TDD (Test-Driven Development)**. Os tes
 
 ### Caso 2: Ícone via URL externa (campo `icon_url`)
 
-1. Escrever teste que verifica que, ao criar uma notificação apenas com `icon_url`, o payload enviado ao service worker contém a URL do endpoint `/push-notification/icon/:notification_id` — o endpoint é quem faz o redirect 302 para a URL externa. **Decidido em 17/09/2026:** a indireção vale também para o caso da URL externa, para que exista um único URL público de ícone e a URL externa não apareça no payload. O custo aceito é um round-trip HTTP e uma consulta ao banco por notificação exibida
+1. Escrever teste que verifica que, ao criar uma notificação apenas com `icon_url`, o payload enviado ao service worker contém a URL fornecida diretamente. **Decidido em 23/09/2026 (RDT-001):** a URL externa vai direto no payload. O desvio pelo endpoint custaria um hop HTTP e uma consulta ao banco por notificação exibida sem poupar o cliente de alcançar o host externo — um `302` informa o destino, não o esconde
 2. Escrever teste que verifica o fallback para `/admin/favicon.ico` quando nem `icon` nem `icon_url` estão preenchidos
 3. Implementar a funcionalidade até os testes passarem
 
@@ -57,6 +58,7 @@ Esta task **deve ser implementada usando TDD (Test-Driven Development)**. Os tes
 - [x] Atualizar `_types.ts` — adicionar campo `icon?: string` em `UserNotification`
 - [x] Atualizar `notification-trigger/index.ts` — resolver `icon` para a URL do ícone (via `resolveIconUrl`, em `resolve-icon.ts`). Resolve para o endpoint dedicado `/push-notification/icon/:notification_id`, que por sua vez redireciona para `/assets/{id}?width=192&height=192&...`, conforme descrito acima — e não para `/assets/{id}` direto
 - [x] Atualizar `service-worker.ts` — lógica de prioridade (icon > icon_url > fallback). A prioridade entre `icon` e `icon_url` ficou no servidor, em `resolve-icon.ts`; o service worker recebe a URL já resolvida em `icon_url` e aplica só o fallback final (`data.icon_url || "/admin/favicon.ico"`)
+- [x] Servir o ícone de arquivo como proxy, e não como redirect — `/assets/{id}` responde 403 sem credenciais, e o browser busca o ícone anonimamente, então o ícone vindo de `directus_files` nunca aparecia no dispositivo (corrigido em 23/09/2026, ver RDT-001)
 - [ ] Atualizar `PushPayload` type para incluir `icon` — adiado: o item apontava para um tipo morto. O `PushPayload` de `src/push-notification/_types.ts` não era usado em lugar nenhum (o payload é montado como objeto literal em `notification-trigger/index.ts`) e já havia ficado para trás num rename, declarando `user_notification_id`/`push_delivery_id` enquanto o payload real carrega `notification_id`/`delivery_id`. Quem descreve o payload de fato é `PushNotificationData`, em `service-worker.types.ts`, e a cópia publicada pelo SDK — ambas já corretas e nenhuma precisa de `icon`, porque o servidor resolve `icon` e `icon_url` numa única URL antes de montar o payload. O tipo morto foi removido em 17/09/2026
 - [x] Adicionar traduções i18n para o campo `icon` (en-US, pt-BR)
 - [x] Verificar que todos os testes passam — 41 testes unitários e 42 e2e verdes em 17/09/2026

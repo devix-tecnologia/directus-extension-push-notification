@@ -1,7 +1,7 @@
 # RDT-001: Ícone de URL Externa Vai Direto no Payload, sem Desvio pelo Directus
 
 **Data:** 2026-09-17
-**Status:** Proposto
+**Status:** Aceito
 **Contexto:** Push Notification — resolução do ícone (`notification-trigger`, endpoint `push-notification`)
 **Decisores:** @sidartaveloso
 

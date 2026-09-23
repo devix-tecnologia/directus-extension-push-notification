@@ -1,4 +1,4 @@
-const DEFAULT_ICON = "/admin/favicon.ico";
+const FALLBACK_ICON = "/admin/favicon.ico";
 
 interface IconSource {
   notification_id?: string | null;
@@ -7,27 +7,23 @@ interface IconSource {
 }
 
 /**
- * Resolve a URL do ícone para push notification.
+ * Precedência: `icon` > `icon_url` > fallback.
  *
- * Prioridade:
- * 1. `icon` (ID de arquivo no Directus) → `/push-notification/icon/{notification_id}`
- *    O endpoint dedicado faz proxy do asset com transformação 192×192px,
- *    sem exigir autenticação.
- * 2. `icon_url` (URL externa) → `/push-notification/icon/{notification_id}`
- *    O endpoint faz redirect (302) para a URL externa.
- * 3. Fallback → `/admin/favicon.ico`
+ * O arquivo do Directus passa pelo endpoint, que o serve como proxy — o browser
+ * busca o ícone sem credenciais e `/assets/{id}` responderia 403. A URL externa
+ * vai direto: desviá-la pelo endpoint custaria um hop e uma consulta ao banco
+ * sem poupar o cliente de alcançar o host externo.
  *
- * Quando há icon ou icon_url, o endpoint é usado para:
- * - Evitar expor directus_files publicamente
- * - Aplicar transformação de imagem automaticamente
- * - Centralizar o acesso ao ícone em um único URL público
+ * @see docs/RDT/rdt-001-icone-externo-url-direta-no-payload.md
  */
-export function resolveIconUrl(source: IconSource): string {
-  if (source.icon || source.icon_url) {
-    if (source.notification_id) {
-      return `/push-notification/icon/${source.notification_id}`;
-    }
+export function resolveIconUrl({
+  notification_id,
+  icon,
+  icon_url,
+}: IconSource): string {
+  if (icon && notification_id) {
+    return `/push-notification/icon/${notification_id}`;
   }
 
-  return DEFAULT_ICON;
+  return icon_url || FALLBACK_ICON;
 }
