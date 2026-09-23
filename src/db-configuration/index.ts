@@ -1,5 +1,9 @@
 import { defineHook } from "@directus/extensions-sdk";
 import { readInnerFile } from "../utils/files.js";
+import {
+  migrateLanguagesToLanguage,
+  LANGUAGE_COLLECTION,
+} from "./migrate-languages.js";
 
 export default defineHook(
   ({ init }, { services, database, getSchema, logger }) => {
@@ -171,6 +175,19 @@ export default defineHook(
         }
       }
 
+      // STEP 2.5: 🚨 BREAKING CHANGE 🚨 migrate the legacy 'languages'
+      // collection to the singular 'language' (Devix convention, shared with
+      // directus-extension-inframe). Runs before the relations step so that
+      // every relation is already pointing at 'language'.
+      await migrateLanguagesToLanguage({
+        knex: database,
+        services: services as unknown as Parameters<
+          typeof migrateLanguagesToLanguage
+        >[0]["services"],
+        schema: await getSchema({ database: database }),
+        logger,
+      });
+
       // STEP 3: Create relations
       if (relations.length > 0) {
         // Refresh schema again before relations
@@ -186,20 +203,24 @@ export default defineHook(
             logger.debug(
               `[DB Configuration] Creating relation '${relation.collection}.${relation.field}' -> ${relation.related_collection}`,
             );
-            
+
             // Remove constraint_name if null to avoid conflicts
             const relationData = { ...relation };
             if (relationData.schema?.constraint_name === null) {
               delete relationData.schema.constraint_name;
             }
-            
+
             await relationsService.createOne(relationData);
             relationsCreated++;
             logger.info(
               `[DB Configuration] Relation '${relation.collection}.${relation.field}' created successfully`,
             );
           } catch (e: unknown) {
-            const error = e as { message?: string; code?: string; stack?: string };
+            const error = e as {
+              message?: string;
+              code?: string;
+              stack?: string;
+            };
             if (
               error?.message &&
               (error.message.includes("already exists") ||
@@ -212,7 +233,9 @@ export default defineHook(
               logger.error(
                 `[DB Configuration] FAILED to create relation '${relation.collection}.${relation.field}' -> ${relation.related_collection}`,
               );
-              logger.error(`[DB Configuration] Error message: ${error?.message}`);
+              logger.error(
+                `[DB Configuration] Error message: ${error?.message}`,
+              );
               logger.error(`[DB Configuration] Error code: ${error?.code}`);
               if (error?.stack) {
                 logger.error(`[DB Configuration] Stack trace: ${error.stack}`);
@@ -229,7 +252,7 @@ export default defineHook(
         }
       }
 
-      // STEP 4: Populate languages collection with default languages
+      // STEP 4: Populate the 'language' collection with the default languages
       await setupDefaultLanguages({ services, database, getSchema, logger });
 
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -260,7 +283,10 @@ export default defineHook(
 );
 
 /**
- * Setup default languages (pt-BR, en-US, es-ES)
+ * Seed the `language` collection with every language supported by Directus.
+ *
+ * NOTE: the collection is the singular `language` — the Devix Tecnologia
+ * convention, shared with directus-extension-inframe. See migrate-languages.ts.
  */
 async function setupDefaultLanguages({
   services,
@@ -357,12 +383,12 @@ async function setupDefaultLanguages({
     const collectionExists = await knex
       .select("collection")
       .from("directus_collections")
-      .where("collection", "languages")
+      .where("collection", LANGUAGE_COLLECTION)
       .first();
 
     if (!collectionExists) {
       logger.warn(
-        "[DB Configuration] ⚠️  Languages collection does not exist, skipping language setup",
+        `[DB Configuration] ⚠️  '${LANGUAGE_COLLECTION}' collection does not exist, skipping language setup`,
       );
       return;
     }
@@ -370,8 +396,8 @@ async function setupDefaultLanguages({
     // Get current schema
     const currentSchema = await getSchema({ database });
 
-    // Create ItemsService for languages collection
-    const languagesService = new ItemsService("languages", {
+    // Create ItemsService for the 'language' collection
+    const languagesService = new ItemsService(LANGUAGE_COLLECTION, {
       schema: currentSchema,
       knex: database,
     });
@@ -383,7 +409,7 @@ async function setupDefaultLanguages({
         // Check if language already exists
         const existingLanguage = await knex
           .select("*")
-          .from("languages")
+          .from(LANGUAGE_COLLECTION)
           .where("code", language.code)
           .first();
 
@@ -416,7 +442,7 @@ async function setupDefaultLanguages({
     }
   } catch (error: unknown) {
     logger.warn(
-      `[DB Configuration] ❌ Error setting up languages: ${(error as Error).message}`,
+      `[DB Configuration] ❌ Error setting up '${LANGUAGE_COLLECTION}': ${(error as Error).message}`,
     );
   }
 }

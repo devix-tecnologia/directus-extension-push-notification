@@ -163,6 +163,26 @@ test.describe("Schema Validation - Collections, Fields e Relations (E2E)", () =>
     expect(names).toContain("user_notification");
     expect(names).toContain("push_delivery");
     expect(names).toContain("user_notification_translations");
+    expect(names).toContain("language");
+  });
+
+  // 🚨 BREAKING CHANGE: `languages` (plural) was renamed to `language`
+  test("a collection legada 'languages' não deve mais existir", async () => {
+    const result = await apiGet("/collections");
+    const collections = result.data as Array<{ collection: string }>;
+    const names = collections.map((c) => c.collection);
+
+    expect(names).not.toContain("languages");
+  });
+
+  test("a collection 'language' deve ter code/name/direction", async () => {
+    const fields = await getFields("language");
+
+    const code = findField(fields, "code");
+    expect(code.schema?.is_primary_key).toBe(true);
+
+    expect(findField(fields, "name")).toBeTruthy();
+    expect(findField(fields, "direction")).toBeTruthy();
   });
 
   // ─── Campo push_enabled em directus_users ──────────────────────
@@ -353,17 +373,17 @@ test.describe("Schema Validation - Collections, Fields e Relations (E2E)", () =>
     expect(fkRelation.meta?.junction_field).toBe("languages_code");
   });
 
-  test("user_notification_translations.languages_code deve ser M2O junction para languages", async () => {
+  test("user_notification_translations.languages_code deve ser M2O junction para language", async () => {
     const fields = await getFields("user_notification_translations");
     const relations = await getRelations("user_notification_translations");
 
     const langField = findField(fields, "languages_code");
-    expect(langField.schema?.foreign_key_table).toBe("languages");
+    expect(langField.schema?.foreign_key_table).toBe("language");
     expect(langField.schema?.foreign_key_column).toBe("code");
 
     const langRelation = findRelation(relations, "languages_code");
-    expect(langRelation.related_collection).toBe("languages");
-    expect(langRelation.meta?.one_collection).toBe("languages");
+    expect(langRelation.related_collection).toBe("language");
+    expect(langRelation.meta?.one_collection).toBe("language");
     expect(langRelation.meta?.junction_field).toBe("user_notification_id");
   });
 

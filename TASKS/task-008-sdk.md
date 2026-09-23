@@ -1,8 +1,8 @@
 # Task 008 — SDK para Push Notification Extension
 
-Status: done
-Type: feature
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feature
+- Assignee: Sidarta Veloso
 
 ## Description
 

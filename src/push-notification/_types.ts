@@ -125,17 +125,14 @@ export interface SendNotificationResponse {
 }
 
 // === Push Payload Types (Service Worker) ===
-
-export interface PushPayload {
-  title: string;
-  body?: string;
-  icon_url?: string;
-  action_url?: string;
-  priority?: NotificationPriority;
-  user_notification_id: string;
-  push_delivery_id: string;
-  data?: Record<string, unknown>;
-}
+//
+// O payload enviado ao service worker é descrito por `PushNotificationData`
+// em `service-worker.types.ts` — que é o tipo realmente aplicado, em
+// `service-worker.ts`. A cópia que existia aqui (`PushPayload`) não era usada
+// em lugar nenhum e havia ficado para trás num rename: declarava
+// `user_notification_id`/`push_delivery_id` enquanto o payload real carrega
+// `notification_id`/`delivery_id`. O SDK publica a sua própria versão, já
+// correta, em `packages/sdk/src/types.ts`.
 
 // === Options Types (inspirado no Firebase Messaging) ===
 

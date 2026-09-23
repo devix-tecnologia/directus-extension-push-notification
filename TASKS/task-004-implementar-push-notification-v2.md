@@ -1,10 +1,18 @@
 # Task 004: Implementar Push Notification com Arquitetura Nativa Directus
 
-Status: in-progress
+- Status: in-progress
 
 **Status:** `in-progress`  
 **Priority:** `high`  
 **Estimate:** `6-8h`
+
+## Description
+
+Reescrever o push notification sobre uma arquitetura nativa do Directus, com suporte a **múltiplos dispositivos por usuário**.
+
+A arquitetura anterior tinha uma única coleção `PushNotification` e um dispositivo por usuário. Esta task a substitui por três coleções — `push_subscription` (uma por dispositivo), `user_notification` (registro multi-canal: push, email, SMS, in-app) e `push_delivery` (tracking de entrega por dispositivo) —, adiciona o campo `push_enabled` em `directus_users`, e liga tudo com um service worker, um hook de backend que dispara o push ao criar uma `user_notification` e um hook de frontend que faz auto-subscribe no login.
+
+O ganho central é não precisar de UI customizada: tudo é gerenciado pelos formulários e pelo sistema de permissões nativos do Directus. Os detalhes de contexto, objetivo, comparação entre as duas arquiteturas e critérios de aceitação estão nas seções abaixo.
 
 ## Progresso da Implementação
 
