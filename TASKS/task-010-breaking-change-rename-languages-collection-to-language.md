@@ -137,14 +137,73 @@ translation flow keeps resolving titles/bodies after the rename.
 4. If the migration warns that `languages` is still referenced by another
    collection, repoint that relation and restart Directus to finish the drop.
 
+## Visual evidence
+
+Captured on 2026-09-23 against Directus 11.14.1 (the version the e2e suite runs),
+one fresh SQLite database per capture. **Before** is the extension built at
+`a38f038`, the last `develop` revision before this task was merged; **after** is
+`develop` with the task merged. The only difference between the two captures is
+the extension.
+
+**Opening a notification.** This is the defect the rename fixed. Before, opening
+any `user_notification` fails with
+`[FORBIDDEN] You don't have permission to access field "languages_code" in
+collection "languages" or it does not exist`: the translations interface pointed
+its `languageField` at `languages_code`, which is the junction's column, not a
+field of the languages collection. After, the item opens normally.
+
+| Before                                                  | After                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| ![Before](assets/task-010-notificacao-aberta-antes.png) | ![After](assets/task-010-notificacao-aberta-depois.png) |
+
+**The translations field.** Before, the language selector is empty and the two
+translations stored through the API (`pt-BR` and `en-US`) do not show up. After,
+the selector shows `en-US` with its translated title and body.
+
+| Before                                                  | After                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| ![Before](assets/task-010-campo-de-traducoes-antes.png) | ![After](assets/task-010-campo-de-traducoes-depois.png) |
+
+**The data model.** The five collections the extension creates, with
+`languages` becoming `language`.
+
+| Before                                               | After                                                |
+| ---------------------------------------------------- | ---------------------------------------------------- |
+| ![Before](assets/task-010-modelo-de-dados-antes.png) | ![After](assets/task-010-modelo-de-dados-depois.png) |
+
+**The languages collection.** Same fields (`code`, `name`, `direction`) and the
+same 46 languages, under the new technical name. The content listing looks the
+same in both versions, because it only shows the display name "Languages"; the
+technical name is visible here, in the data model.
+
+| Before                                                  | After                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| ![Before](assets/task-010-colecao-de-idiomas-antes.png) | ![After](assets/task-010-colecao-de-idiomas-depois.png) |
+
+### How the pair was generated
+
+`scripts/captura-telas-evidencia.ts` logs in, creates an `in_app` notification
+with two translations (so the extension hook sends no real push), and captures
+the four screens. File names follow the geohub convention: the moment goes in the
+name, not in a subfolder, so each pair sits side by side in `TASKS/assets/`.
+
+    DIRECTUS_URL=http://localhost:PORT EVIDENCE_TASK=010 EVIDENCE_MOMENT=antes|depois \
+      CHROME_CHANNEL=chrome node scripts/captura-telas-evidencia.ts
+
+The script runs on Node 24 without a build step, because Node strips the
+TypeScript types itself.
+
 ## Notes
 
 - The version in `package.json` is **not** bumped by hand: semantic-release reads
   the `BREAKING CHANGE:` commit footer on `main` and publishes `1.0.0`.
-- `pnpm run build` could not be executed in this workspace: `dist/` is owned by
-  `root` and contains directories named `api.js`/`app.js` (left over from a
-  Docker bind mount). `pnpm typecheck`, `pnpm lint` and `pnpm test:unit` all pass.
-- Integration/e2e suites were not executed here (they need the Docker stack).
+- When this task was implemented, `pnpm run build` could not run in that
+  workspace: `dist/` was owned by `root` and held directories named
+  `api.js`/`app.js`, left over from a Docker bind mount that ran before a build.
+  Integration and e2e suites were not run either.
+- Verified on 2026-09-23, after the merge into `develop`: `build`, `lint`,
+  `typecheck`, `test:unit` (41) and `format:check` pass under pnpm 11.21.0, and
+  the e2e suite passes (41 tests) against Directus 11.14.1.
 
 - Related convention source: `devix/directus-extension-inframe/schema.json`
   (`collection: "language"`).
