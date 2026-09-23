@@ -3,6 +3,7 @@
 - Status: done
 - Type: refactor
 - Assignee: Sidarta Veloso
+- Priority: 1000
 
 ---
 
@@ -195,6 +196,17 @@ TypeScript types itself.
 
 ## Notes
 
+- **Confirmed as the cross-project convention on 2026-09-23** (Sidarta). The
+  geohub had provisionally decided on `languages` the day before, leaning on the
+  Directus Translations wizard and on this extension's own junction and seed;
+  that decision was reversed once this task surfaced. The shared language
+  package planned for `devix-stack` (geohub task-379) will target `language`,
+  and this extension will later delegate the setup of `language` — and the drop
+  of the legacy `languages` — to that package instead of `migrate-languages.ts`.
+- **Not published yet** as of 2026-09-23: the task-010 commits are only on
+  `develop`; `semantic-release` runs on `main` and both GitHub workflows are
+  `.disabled`. Releasing `1.0.0` requires merging `develop` into `main` and
+  re-enabling (or hand-running) the release.
 - The version in `package.json` is **not** bumped by hand: semantic-release reads
   the `BREAKING CHANGE:` commit footer on `main` and publishes `1.0.0`.
 - When this task was implemented, `pnpm run build` could not run in that
