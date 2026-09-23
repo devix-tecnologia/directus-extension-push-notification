@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
 /**
  * O endpoint de ícone serve o asset com a credencial do serviço
@@ -13,8 +14,11 @@ const ADMIN_EMAIL = "admin@example.com";
 const ADMIN_PASSWORD = "test-password-not-a-leak";
 const DEFAULT_BASE_URL = "http://localhost:8055";
 
-const RESTRICTED_EMAIL = "icone-restrito@example.com";
+/** Sufixo por execução: nomes fixos colidem com resíduos e entre workers. */
+const RUN_ID = randomUUID().slice(0, 8);
+const RESTRICTED_EMAIL = `icone-restrito-${RUN_ID}@example.com`;
 const RESTRICTED_PASSWORD = "restrito-pass-123";
+const RESTRICTED_NAME = `somente-notificacao-${RUN_ID}`;
 
 const ICON_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEElEQVR42mNgaPiPHQ0tCQAqM1/BgkfPGQAAAABJRU5ErkJggg==",
@@ -51,12 +55,16 @@ test.describe("Endpoint de ícone — permissões", () => {
     const policy = await adminApi.post("/policies", {
       headers: adminAuth,
       data: {
-        name: "somente-notificacao",
+        name: RESTRICTED_NAME,
         app_access: true,
         admin_access: false,
         enforce_tfa: false,
       },
     });
+    expect(
+      policy.ok(),
+      `criação da policy falhou: ${await policy.text()}`,
+    ).toBe(true);
     createdIds.policy = (await policy.json()).data.id;
 
     for (const action of ["create", "read"]) {
@@ -75,8 +83,11 @@ test.describe("Endpoint de ícone — permissões", () => {
 
     const role = await adminApi.post("/roles", {
       headers: adminAuth,
-      data: { name: "somente-notificacao" },
+      data: { name: RESTRICTED_NAME },
     });
+    expect(role.ok(), `criação da role falhou: ${await role.text()}`).toBe(
+      true,
+    );
     createdIds.role = (await role.json()).data.id;
 
     await adminApi.post("/access", {
@@ -93,6 +104,9 @@ test.describe("Endpoint de ícone — permissões", () => {
         status: "active",
       },
     });
+    expect(user.ok(), `criação do usuário falhou: ${await user.text()}`).toBe(
+      true,
+    );
     createdIds.user = (await user.json()).data.id;
 
     const upload = await adminApi.post("/files", {
@@ -105,6 +119,7 @@ test.describe("Endpoint de ícone — permissões", () => {
         },
       },
     });
+    expect(upload.ok(), `upload falhou: ${await upload.text()}`).toBe(true);
     fileId = (await upload.json()).data.id;
 
     const restrictedLogin = await anonymousApi.post("/auth/login", {
@@ -159,48 +174,42 @@ test.describe("Endpoint de ícone — permissões", () => {
     expect(response.status()).toBe(403);
   });
 
-  test("o Directus aceita apontar o M2O para um arquivo sem permissão de leitura", async () => {
+  test("criar notificação apontando para arquivo sem permissão é rejeitado", async () => {
     const response = await anonymousApi.post("/items/user_notification", {
       headers: restrictedAuth,
       data: {
         user: restrictedUserId,
         title: "referência a arquivo alheio",
-        body: "o M2O é gravado sem validar leitura no alvo",
+        body: "o Directus grava o M2O sem validar leitura no alvo; a extensão barra",
         channel: "in_app",
         icon: fileId,
+      },
+    });
+
+    expect(response.ok()).toBe(false);
+    expect(response.status()).toBe(403);
+  });
+
+  test("a notificação rejeitada não fica disponível para vazar pelo endpoint", async () => {
+    const notifications = await adminApi.get(
+      `/items/user_notification?filter[icon][_eq]=${fileId}&fields=id`,
+      { headers: adminAuth },
+    );
+
+    expect((await notifications.json()).data).toEqual([]);
+  });
+
+  test("sem ícone, a criação segue livre", async () => {
+    const response = await anonymousApi.post("/items/user_notification", {
+      headers: restrictedAuth,
+      data: {
+        user: restrictedUserId,
+        title: "sem ícone",
+        body: "a checagem não deve atrapalhar o caso comum",
+        channel: "in_app",
       },
     });
 
     expect(response.ok()).toBe(true);
-    expect((await response.json()).data.icon).toBe(fileId);
-  });
-
-  test("um arquivo que o criador não pode ler não deve vazar pelo endpoint", async () => {
-    // VULNERABILIDADE CONFIRMADA em 23/09/2026: como o M2O é aceito sem validar
-    // leitura no alvo e o endpoint serve o asset com a credencial do serviço,
-    // quem pode criar notificação lê qualquer arquivo. Ao corrigir, remova o
-    // `test.fail()` — o Playwright acusa quando um teste assim volta a passar.
-    test.fail();
-
-    const notification = await anonymousApi.post("/items/user_notification", {
-      headers: restrictedAuth,
-      data: {
-        user: restrictedUserId,
-        title: "exfiltração",
-        body: "aponta para arquivo que este usuário não pode ler",
-        channel: "in_app",
-        icon: fileId,
-      },
-    });
-
-    const notificationId = (await notification.json()).data.id;
-    const leak = await anonymousApi.get(
-      `/push-notification/icon/${notificationId}`,
-    );
-
-    expect(
-      leak.status(),
-      "o endpoint entregou os bytes de um arquivo que o criador da notificação não podia ler",
-    ).not.toBe(200);
   });
 });
