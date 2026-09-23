@@ -183,12 +183,20 @@ Opção 2 na avaliação acima — proxiar URL arbitrária fornecida por quem cr
 notificação abriria SSRF. O endpoint agora faz as duas coisas, e faz cada uma
 onde ela é segura.
 
+## Consequência de Segurança Registrada Depois
+
+Servir o asset com a credencial do serviço moveu a autorização do Directus para
+este código, e isso não estava registrado aqui. A brecha resultante — quem podia
+criar notificação lia qualquer arquivo — foi medida, corrigida e documentada no
+[RDT-002](rdt-002-referencia-de-icone-validada-na-escrita.md).
+
 ## Links Relacionados
 
 - [Task 006 — Campo Icon como relação com directus_files](../../TASKS/task-006-icon-field-directus-files.md)
 - [`src/notification-trigger/resolve-icon.ts`](../../src/notification-trigger/resolve-icon.ts) — resolução da URL
 - [`src/push-notification/index.ts`](../../src/push-notification/index.ts) — endpoint `/icon/:notification_id`
 - [`src/push-notification/service-worker.ts`](../../src/push-notification/service-worker.ts) — consumo do payload e confirmação de entrega
+- [RDT-002: A Referência do Ícone é Validada na Escrita](rdt-002-referencia-de-icone-validada-na-escrita.md)
 - [MDN — Notification.icon](https://developer.mozilla.org/en-US/docs/Web/API/Notification/icon)
 
 ## Histórico de Revisões
