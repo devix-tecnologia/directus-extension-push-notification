@@ -96,7 +96,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "postbuild": "cp ./directus-state.json ./dist/directus-state.json && cp ./service-worker.js ./dist/service-worker.js",
     "add-extension": "directus-extension add",
     "generate:vapid": "node scripts/generate-test-vapid-keys.js",
