@@ -128,11 +128,48 @@ O endpoint continua existindo e continua sendo a via para o caso do arquivo, ond
 
 ## Riscos e Mitigações
 
-| Risco                                                                                      | Probabilidade      | Impacto | Mitigação                                                                                                                                                                                                                                   |
-| ------------------------------------------------------------------------------------------ | ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cliente com proxy que bloqueia domínios externos fica sem ícone                            | Baixa              | Baixo   | O ícone degrada para ausente; a notificação continua sendo exibida. Se ocorrer de fato, adotar a Opção 2 (proxy real)                                                                                                                       |
-| `/assets/{id}` exigir credenciais e o ícone de arquivo não renderizar                      | **Não verificada** | Médio   | **Risco pré-existente, independente desta decisão.** A premissa de que nenhum arquivo precisa ficar público nunca foi testada com ícone real renderizando no browser — os testes cobrem só a lógica de resolução. Verificar em teste manual |
-| URL externa apontando para conteúdo impróprio ou que vaza IP do dispositivo ao ser buscada | Baixa              | Baixo   | Já é o caso hoje: o browser busca o host externo de qualquer forma, depois do redirect                                                                                                                                                      |
+| Risco                                                                                      | Probabilidade  | Impacto | Mitigação                                                                                                                 |
+| ------------------------------------------------------------------------------------------ | -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Cliente com proxy que bloqueia domínios externos fica sem ícone                            | Baixa          | Baixo   | O ícone degrada para ausente; a notificação continua sendo exibida. Se ocorrer de fato, adotar a Opção 2 (proxy real)     |
+| `/assets/{id}` exigir credenciais e o ícone de arquivo não renderizar                      | **Confirmada** | Alto    | **Defeito confirmado em 23/09/2026, pré-existente e independente desta decisão.** Ver a seção "Defeito confirmado" abaixo |
+| URL externa apontando para conteúdo impróprio ou que vaza IP do dispositivo ao ser buscada | Baixa          | Baixo   | Já é o caso hoje: o browser busca o host externo de qualquer forma, depois do redirect                                    |
+
+## Defeito Confirmado — o ícone vindo de `directus_files` não renderiza
+
+Verificado em 23/09/2026 com o teste `tests/e2e/icon-endpoint.spec.ts`, contra o
+Directus 11.14.1 do ambiente de teste:
+
+| Requisição                                                               | Resposta         |
+| ------------------------------------------------------------------------ | ---------------- |
+| `/assets/{id}?width=192&height=192&fit=cover&quality=80` **autenticado** | `200`, `image/*` |
+| `/assets/{id}?width=192&...` **anônimo**                                 | **`403`**        |
+| `/assets/{id}` **anônimo, sem transformação**                            | **`403`**        |
+
+O `403` é da permissão de leitura do arquivo, não da transformação — ocorre com
+e sem os parâmetros. Como a camada de notificação do browser busca o ícone **sem
+as credenciais da sessão**, o ícone vindo de `directus_files` não aparece no
+dispositivo hoje. Só o caminho da URL externa funciona.
+
+A raiz é uma discrepância entre o que o endpoint diz e o que ele faz: o próprio
+código se descreve como proxy (`Proxying icon asset for notification`), mas
+executa `res.redirect`. Num proxy, quem busca o asset é o servidor, que tem
+credencial; num redirect, quem busca é o browser anônimo, que não tem.
+
+Isso **não altera a decisão proposta** para a URL externa — os dois caminhos são
+independentes. Altera o caminho do arquivo, que precisa de correção própria. Duas
+saídas:
+
+1. **Tornar `directus_files` legível publicamente.** Contraria frontalmente o
+   objetivo declarado da task-006 e expõe todos os arquivos, não só os ícones.
+2. **Transformar o endpoint em proxy de fato para o arquivo interno** — ler o
+   asset no servidor, com a credencial do próprio serviço, e devolver os bytes.
+   Aqui não há a superfície de SSRF que pesou contra a Opção 2 na avaliação
+   acima, porque a origem não é uma URL arbitrária: é um arquivo do Directus
+   referenciado por ID.
+
+A saída 2 é coerente com o que o endpoint já afirma ser, e vale notar que ela
+**não** reabre o caso da URL externa: proxiar um ID interno é seguro, proxiar uma
+URL fornecida pelo usuário não é.
 
 ## Links Relacionados
 
@@ -144,9 +181,10 @@ O endpoint continua existindo e continua sendo a via para o caso do arquivo, ond
 
 ## Histórico de Revisões
 
-| Data       | Autor          | Mudança              |
-| ---------- | -------------- | -------------------- |
-| 2026-09-17 | @sidartaveloso | Criação do documento |
+| Data       | Autor          | Mudança                                                                                             |
+| ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| 2026-09-17 | @sidartaveloso | Criação do documento                                                                                |
+| 2026-09-23 | @sidartaveloso | Risco do `/assets/{id}` verificado e confirmado como defeito; seção "Defeito Confirmado" adicionada |
 
 ---
 
