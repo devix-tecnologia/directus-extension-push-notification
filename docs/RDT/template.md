@@ -11,7 +11,7 @@
 
 **Exemplo:**
 
-> Precisamos escolher um sistema de armazenamento de arquivos para o módulo de gestão de documentos do DETRAN. Atualmente armazenamos no sistema de arquivos local, mas isso não escala e dificulta backup/replicação.
+> Uma notificação pode ter ícone vindo de um arquivo do Directus ou de uma URL externa. Hoje as duas origens são resolvidas pela mesma indireção, e precisamos decidir se isso se justifica nos dois casos.
 
 ## Decisão
 
@@ -19,7 +19,7 @@
 
 **Exemplo:**
 
-> Utilizaremos MinIO como solução de object storage, integrado ao Directus via adapter customizado.
+> A URL externa passa a ir direto no payload; a indireção pelo endpoint fica restrita ao ícone vindo de `directus_files`.
 
 ## Alternativas Consideradas
 
@@ -93,9 +93,9 @@
 
 **Exemplo:**
 
-> - Configurar bucket `documentos-detran` no MinIO
-> - Criar extensão Directus para upload/download
-> - Implementar política de retenção de 7 anos (conforme legislação)
+> - Ajustar `resolveIconUrl` para devolver `icon_url` quando não houver arquivo
+> - Atualizar o teste de unidade correspondente
+> - Refletir a mudança na task que especificou o comportamento
 
 ## Riscos e Mitigações
 
