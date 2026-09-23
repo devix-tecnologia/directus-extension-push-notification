@@ -81,7 +81,7 @@ services:
       - bash
       - -lc
       - |
-        npm i -g pnpm@10.29.2 && \
+        npm i -g pnpm@11.21.0 && \
         pnpm install --frozen-lockfile && \
         pnpm exec playwright install --with-deps && \
         pnpm test:e2e
