@@ -14,11 +14,11 @@ Uma `user_notification` pode ter ícone de duas origens, mutuamente exclusivas n
 
 Hoje `resolveIconUrl` ([`src/notification-trigger/resolve-icon.ts`](../../src/notification-trigger/resolve-icon.ts)) devolve **a mesma URL nos dois casos**: o endpoint `/push-notification/icon/:notification_id`. O endpoint então lê a notificação no banco e decide:
 
-| Origem     | O que o endpoint faz                                                                                     |
-| ---------- | -------------------------------------------------------------------------------------------------------- |
-| `icon`     | `302` para `/assets/{id}?width=192&height=192&fit=cover&quality=80` — caminho **relativo**, mesma origem |
-| `icon_url` | `302` para a URL externa                                                                                 |
-| nenhuma    | `302` para `/admin/favicon.ico`                                                                          |
+| Origem     | O que o endpoint faz                                                                                      |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| `icon`     | **proxy**: lê o asset no servidor via `AssetsService` e devolve os bytes (ver seção "Defeito Confirmado") |
+| `icon_url` | `302` para a URL externa                                                                                  |
+| nenhuma    | `302` para `/admin/favicon.ico`                                                                           |
 
 O payload enviado ao service worker carrega essa URL resolvida no campo `icon_url`, e o service worker apenas a aplica (`data.icon_url || "/admin/favicon.ico"`).
 
@@ -134,7 +134,7 @@ O endpoint continua existindo e continua sendo a via para o caso do arquivo, ond
 | `/assets/{id}` exigir credenciais e o ícone de arquivo não renderizar                      | **Confirmada** | Alto    | **Defeito confirmado em 23/09/2026, pré-existente e independente desta decisão.** Ver a seção "Defeito confirmado" abaixo |
 | URL externa apontando para conteúdo impróprio ou que vaza IP do dispositivo ao ser buscada | Baixa          | Baixo   | Já é o caso hoje: o browser busca o host externo de qualquer forma, depois do redirect                                    |
 
-## Defeito Confirmado — o ícone vindo de `directus_files` não renderiza
+## Defeito Confirmado e Corrigido — o ícone vindo de `directus_files` não renderizava
 
 Verificado em 23/09/2026 com o teste `tests/e2e/icon-endpoint.spec.ts`, contra o
 Directus 11.14.1 do ambiente de teste:
@@ -171,6 +171,18 @@ A saída 2 é coerente com o que o endpoint já afirma ser, e vale notar que ela
 **não** reabre o caso da URL externa: proxiar um ID interno é seguro, proxiar uma
 URL fornecida pelo usuário não é.
 
+**Decidido e implementado em 23/09/2026: saída 2.** O endpoint passou a ler o
+asset com `AssetsService` e `accountability: null` — a credencial do próprio
+serviço — e a devolver os bytes com a transformação 192×192 aplicada, em vez de
+redirecionar. O teste anônimo que falhava agora passa: o `GET` no endpoint
+responde `200 image/*` sem credencial alguma, e nenhum arquivo do Directus
+precisou ser tornado público.
+
+A URL externa continua por redirect, exatamente pela razão que pesou contra a
+Opção 2 na avaliação acima — proxiar URL arbitrária fornecida por quem cria a
+notificação abriria SSRF. O endpoint agora faz as duas coisas, e faz cada uma
+onde ela é segura.
+
 ## Links Relacionados
 
 - [Task 006 — Campo Icon como relação com directus_files](../../TASKS/task-006-icon-field-directus-files.md)
@@ -185,6 +197,7 @@ URL fornecida pelo usuário não é.
 | ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
 | 2026-09-17 | @sidartaveloso | Criação do documento                                                                                |
 | 2026-09-23 | @sidartaveloso | Risco do `/assets/{id}` verificado e confirmado como defeito; seção "Defeito Confirmado" adicionada |
+| 2026-09-23 | @sidartaveloso | Defeito corrigido: o caso `icon` passou a ser proxy de fato, via `AssetsService`                    |
 
 ---
 

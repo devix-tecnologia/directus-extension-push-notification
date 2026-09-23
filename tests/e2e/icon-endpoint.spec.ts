@@ -13,15 +13,11 @@ const ADMIN_PASSWORD = "test-password-not-a-leak";
 
 const EXTERNAL_ICON_URL = "https://example.com/icone-externo.png";
 const FALLBACK_ICON = "/admin/favicon.ico";
-const ICON_TRANSFORM = "width=192&height=192&fit=cover&quality=80";
 const UNKNOWN_NOTIFICATION_ID = "00000000-0000-4000-8000-000000000000";
 const DEFAULT_BASE_URL = "http://localhost:8055";
 
 const iconEndpoint = (notificationId: string) =>
   `/push-notification/icon/${notificationId}`;
-
-const transformedAsset = (fileId: string) =>
-  `/assets/${fileId}?${ICON_TRANSFORM}`;
 
 /**
  * Um PNG 1×1 faz o libvips do Directus responder 500 na transformação
@@ -115,13 +111,23 @@ test.describe("Endpoint de ícone", () => {
     expect(response.headers()["location"]).toBe(destination);
   }
 
-  test("com arquivo do Directus, redireciona para o asset transformado", async () => {
+  async function expectImage(
+    notificationId: string,
+    client: APIRequestContext = page.request,
+  ) {
+    const response = await client.get(iconEndpoint(notificationId), {
+      maxRedirects: 0,
+    });
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/");
+    expect((await response.body()).byteLength).toBeGreaterThan(0);
+  }
+
+  test("com arquivo do Directus, devolve a imagem sem redirecionar", async () => {
     const fileId = await uploadIcon();
 
-    await expectRedirect(
-      await createNotification({ icon: fileId }),
-      transformedAsset(fileId),
-    );
+    await expectImage(await createNotification({ icon: fileId }));
   });
 
   test("com URL externa, redireciona para a URL informada", async () => {
@@ -134,12 +140,11 @@ test.describe("Endpoint de ícone", () => {
   test("com arquivo e URL externa, o arquivo tem prioridade", async () => {
     const fileId = await uploadIcon();
 
-    await expectRedirect(
+    await expectImage(
       await createNotification({
         icon: fileId,
         icon_url: EXTERNAL_ICON_URL,
       }),
-      transformedAsset(fileId),
     );
   });
 
@@ -155,14 +160,6 @@ test.describe("Endpoint de ícone", () => {
     playwright,
     baseURL,
   }) => {
-    // DEFEITO CONFIRMADO em 23/09/2026: `/assets/{id}` responde 403 sem
-    // credenciais, com e sem transformação, então o ícone vindo de
-    // `directus_files` não aparece no dispositivo. O endpoint se documenta como
-    // proxy mas faz redirect — num proxy quem busca o asset é o servidor, que
-    // tem credencial. Ao corrigir, remova esta linha: o Playwright acusa quando
-    // um teste marcado assim volta a passar.
-    test.fail();
-
     const fileId = await uploadIcon();
     const notificationId = await createNotification({ icon: fileId });
 
@@ -171,15 +168,7 @@ test.describe("Endpoint de ícone", () => {
     });
 
     try {
-      await expectRedirect(notificationId, transformedAsset(fileId), anonymous);
-
-      const asset = await anonymous.get(transformedAsset(fileId));
-
-      expect(
-        asset.status(),
-        "403 aqui significa que a premissa de não tornar arquivo algum público não se sustenta",
-      ).toBe(200);
-      expect(asset.headers()["content-type"]).toContain("image/");
+      await expectImage(notificationId, anonymous);
     } finally {
       await anonymous.dispose();
     }
