@@ -7,7 +7,9 @@ interface IconSource {
 }
 
 /**
- * Precedência: `icon` > `icon_url` > fallback.
+ * Qual das duas origens de ícone usar é escolha de quem cria a notificação, e a
+ * interface as torna mutuamente exclusivas. A ordem abaixo é só desempate
+ * defensivo, para registros antigos e chamadas de API que preencham as duas.
  *
  * O arquivo do Directus passa pelo endpoint, que o serve como proxy — o browser
  * busca o ícone sem credenciais e `/assets/{id}` responderia 403. A URL externa

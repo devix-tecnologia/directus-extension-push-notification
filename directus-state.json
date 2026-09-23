@@ -1908,8 +1908,18 @@
             "translation": "URL do Ícone"
           }
         ],
-        "note": "URL externa do ícone (alternativa ao upload de arquivo)",
-        "conditions": null,
+        "note": "URL externa do ícone (alternativa ao upload de arquivo).",
+        "conditions": [
+          {
+            "name": "Oculta quando há arquivo",
+            "rule": {
+              "icon": {
+                "_nempty": true
+              }
+            },
+            "hidden": true
+          }
+        ],
         "required": false,
         "group": null,
         "validation": null,
@@ -1963,8 +1973,18 @@
             "translation": "Ícone"
           }
         ],
-        "note": "Ícone da notificação (upload de imagem, tem prioridade sobre URL externa). Deve ser acessível publicamente.",
-        "conditions": null,
+        "note": "Ícone da notificação (upload de imagem). Servido pelo endpoint da extensão, então o arquivo não precisa ser público.",
+        "conditions": [
+          {
+            "name": "Oculta quando há URL externa",
+            "rule": {
+              "icon_url": {
+                "_nempty": true
+              }
+            },
+            "hidden": true
+          }
+        ],
         "required": false,
         "group": null,
         "validation": null,

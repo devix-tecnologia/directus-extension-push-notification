@@ -38,7 +38,7 @@ Esta task **deve ser implementada usando TDD (Test-Driven Development)**. Os tes
 
 1. Escrever teste que verifica que, ao criar uma notificação com um `icon` (ID de arquivo), o payload enviado ao service worker contém a URL `/assets/{id}`
 2. Escrever teste que verifica que a URL do asset é acessível sem autenticação (resposta HTTP 200 sem header Authorization)
-3. Escrever teste que verifica que, quando `icon` e `icon_url` estão ambos preenchidos, `icon` tem prioridade
+3. Escrever teste que verifica o desempate quando `icon` e `icon_url` vêm ambos preenchidos. **Revisto em 23/09/2026:** qual origem usar é escolha de quem cria a notificação, e a interface passou a torná-las mutuamente exclusivas via `conditions`. A ordem no servidor é só desempate defensivo, para registros antigos e chamadas de API
 4. Implementar a funcionalidade até os testes passarem
 
 ### Caso 2: Ícone via URL externa (campo `icon_url`)
@@ -54,6 +54,7 @@ Esta task **deve ser implementada usando TDD (Test-Driven Development)**. Os tes
 - [x] Adicionar campo `icon` (uuid, M2O → `directus_files`) em `directus-state.json`
 - [x] Adicionar relação M2O `icon` → `directus_files` em `directus-state.json`
 - [x] Configurar interface `file-image` com opções de validação (apenas imagens)
+- [x] Tornar `icon` e `icon_url` mutuamente exclusivos na interface, via `conditions` — a escolha da origem é do usuário, não uma precedência do servidor (23/09/2026)
 - [x] Configurar display `image` para preview na listagem
 - [x] Atualizar `_types.ts` — adicionar campo `icon?: string` em `UserNotification`
 - [x] Atualizar `notification-trigger/index.ts` — resolver `icon` para a URL do ícone (via `resolveIconUrl`, em `resolve-icon.ts`). Resolve para o endpoint dedicado `/push-notification/icon/:notification_id`, que por sua vez redireciona para `/assets/{id}?width=192&height=192&...`, conforme descrito acima — e não para `/assets/{id}` direto

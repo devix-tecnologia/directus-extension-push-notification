@@ -137,7 +137,7 @@ test.describe("Endpoint de ícone", () => {
     );
   });
 
-  test("com arquivo e URL externa, o arquivo tem prioridade", async () => {
+  test("com arquivo e URL externa, desempata a favor do arquivo", async () => {
     const fileId = await uploadIcon();
 
     await expectImage(

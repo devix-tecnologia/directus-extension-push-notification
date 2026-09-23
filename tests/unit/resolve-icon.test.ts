@@ -15,7 +15,7 @@ describe("resolveIconUrl", () => {
       ).toBe(ICON_ENDPOINT);
     });
 
-    it("tem prioridade sobre a URL externa", () => {
+    it("desempata a favor do arquivo quando as duas vêm preenchidas", () => {
       expect(
         resolveIconUrl({
           notification_id: NOTIFICATION_ID,
