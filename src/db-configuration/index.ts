@@ -1,9 +1,20 @@
 import { defineHook } from "@directus/extensions-sdk";
 import { readInnerFile } from "../utils/files.js";
 import {
-  migrateLanguagesToLanguage,
+  migrateLegacyLanguageCollection,
   LANGUAGE_COLLECTION,
+  type DirectusKnex,
+  type DirectusServices,
 } from "./migrate-languages.js";
+
+/**
+ * O tipo de `services` do SDK não é estruturalmente compatível com a interface
+ * mínima que a migração declara — os construtores exigem `AbstractServiceOptions`.
+ * O alargamento fica isolado aqui, e não espalhado em `any` dentro do módulo.
+ */
+const asMigrationServices = (services: unknown) => services as DirectusServices;
+
+const asMigrationKnex = (database: unknown) => database as DirectusKnex;
 
 export default defineHook(
   ({ init }, { services, database, getSchema, logger }) => {
@@ -175,15 +186,10 @@ export default defineHook(
         }
       }
 
-      // STEP 2.5: 🚨 BREAKING CHANGE 🚨 migrate the legacy 'languages'
-      // collection to the singular 'language' (Devix convention, shared with
-      // directus-extension-inframe). Runs before the relations step so that
-      // every relation is already pointing at 'language'.
-      await migrateLanguagesToLanguage({
-        knex: database,
-        services: services as unknown as Parameters<
-          typeof migrateLanguagesToLanguage
-        >[0]["services"],
+      // Antes da criação das relações, para que todas já apontem para 'language'.
+      await migrateLegacyLanguageCollection({
+        knex: asMigrationKnex(database),
+        services: asMigrationServices(services),
         schema: await getSchema({ database: database }),
         logger,
       });

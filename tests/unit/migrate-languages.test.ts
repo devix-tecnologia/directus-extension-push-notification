@@ -1,139 +1,143 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import {
-  migrateLanguagesToLanguage,
-  LEGACY_LANGUAGES_COLLECTION,
+  migrateLegacyLanguageCollection,
+  LEGACY_LANGUAGE_COLLECTION,
   LANGUAGE_COLLECTION,
   OWNED_LANGUAGE_RELATIONS,
+  type DirectusKnex,
+  type DirectusServices,
+  type Logger,
+  type QueryBuilder,
 } from "../../src/db-configuration/migrate-languages.js";
-
-/* -------------------------------------------------------------------------- */
-/* Fakes                                                                       */
-/* -------------------------------------------------------------------------- */
 
 type Row = Record<string, unknown>;
 type Tables = Record<string, Row[]>;
 
-/**
- * Minimal knex fake supporting the read-only query shapes used by the
- * migration: knex(table).select(...).where(col, value).first()
- */
-function createKnex(tables: Tables) {
-  const missing = new Set<string>();
+const project = (row: Row, columns: string[]): Row =>
+  Object.fromEntries(columns.map((column) => [column, row[column]]));
 
-  const knex = (table: string) => {
-    if (!(table in tables)) missing.add(table);
-
+function createKnex(tables: Tables): DirectusKnex {
+  return <TRow>(table: string): QueryBuilder<TRow> => {
     let rows = [...(tables[table] ?? [])];
-    let projection: string[] | null = null;
+    let columns: string[] | null = null;
 
-    // Projection is applied only when the query is resolved, so that
-    // `.select(...).where(...)` filters on the full row like knex does.
-    const resolveRows = () =>
-      projection === null
+    // A projeção só é aplicada ao resolver, para que `.select().where()` filtre
+    // sobre a linha inteira, como o knex faz.
+    const resolve = () =>
+      (columns === null
         ? rows
-        : rows.map((row) =>
-            Object.fromEntries(projection!.map((c) => [c, row[c]])),
-          );
+        : rows.map((row) => project(row, columns!))) as TRow[];
 
-    const builder = {
-      select(...columns: string[]) {
-        projection =
-          columns.length > 0 && columns[0] !== "*" ? [...columns] : null;
+    const builder: QueryBuilder<TRow> = {
+      select(...selected) {
+        columns = selected.length > 0 && selected[0] !== "*" ? selected : null;
+
         return builder;
       },
-      where(column: string, value: unknown) {
+      where(column, value) {
         rows = rows.filter((row) => row[column] === value);
+
         return builder;
       },
-      whereIn(column: string, values: unknown[]) {
-        rows = rows.filter((row) => values.includes(row[column]));
-        return builder;
-      },
-      async first() {
-        return resolveRows()[0];
-      },
-      then(
-        resolve: (value: Row[]) => unknown,
-        reject?: (reason: unknown) => unknown,
-      ) {
-        return Promise.resolve(resolveRows()).then(resolve, reject);
-      },
+      first: async () => resolve()[0],
+      then: (onfulfilled, onrejected) =>
+        Promise.resolve(resolve()).then(onfulfilled, onrejected),
     };
 
     return builder;
   };
-
-  return Object.assign(knex, { __missingTables: missing });
 }
 
-function createLogger() {
-  return {
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
+const createLogger = (): Logger => ({
+  info: vi.fn(),
+  debug: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+});
+
+type CollectionsService = InstanceType<DirectusServices["CollectionsService"]>;
+type RelationsService = InstanceType<DirectusServices["RelationsService"]>;
+type ItemsService = InstanceType<DirectusServices["ItemsService"]>;
+
+interface ServiceCalls {
+  dropCollection: Mock<CollectionsService["deleteOne"]>;
+  deleteRelation: Mock<RelationsService["deleteOne"]>;
+  createRelation: Mock<RelationsService["createOne"]>;
+  createLanguage: Mock<ItemsService["createOne"]>;
+  itemsServiceCollections: string[];
 }
 
-interface ServiceSpies {
-  collectionsDeleteOne: ReturnType<typeof vi.fn>;
-  relationsDeleteOne: ReturnType<typeof vi.fn>;
-  relationsCreateOne: ReturnType<typeof vi.fn>;
-  itemsCreateOne: ReturnType<typeof vi.fn>;
-  itemsCollections: string[];
-}
-
-function createServices(overrides: Partial<ServiceSpies> = {}) {
-  const spies: ServiceSpies = {
-    collectionsDeleteOne: vi.fn().mockResolvedValue(undefined),
-    relationsDeleteOne: vi.fn().mockResolvedValue(undefined),
-    relationsCreateOne: vi.fn().mockResolvedValue(undefined),
-    itemsCreateOne: vi.fn().mockResolvedValue(undefined),
-    itemsCollections: [],
+function createServices(overrides: Partial<ServiceCalls> = {}) {
+  const calls: ServiceCalls = {
+    dropCollection: vi
+      .fn<CollectionsService["deleteOne"]>()
+      .mockResolvedValue(undefined),
+    deleteRelation: vi
+      .fn<RelationsService["deleteOne"]>()
+      .mockResolvedValue(undefined),
+    createRelation: vi
+      .fn<RelationsService["createOne"]>()
+      .mockResolvedValue(undefined),
+    createLanguage: vi
+      .fn<ItemsService["createOne"]>()
+      .mockResolvedValue(undefined),
+    itemsServiceCollections: [],
     ...overrides,
   };
 
-  const services = {
+  const services: DirectusServices = {
     CollectionsService: class {
-      deleteOne = spies.collectionsDeleteOne;
+      deleteOne = calls.dropCollection;
     },
     RelationsService: class {
-      deleteOne = spies.relationsDeleteOne;
-      createOne = spies.relationsCreateOne;
+      deleteOne = calls.deleteRelation;
+      createOne = calls.createRelation;
     },
     ItemsService: class {
       constructor(collection: string) {
-        spies.itemsCollections.push(collection);
+        calls.itemsServiceCollections.push(collection);
       }
-      createOne = spies.itemsCreateOne;
+      createOne = calls.createLanguage;
     },
   };
 
-  return { services, spies };
+  return { services, calls };
 }
 
-/** The relation this extension owns and is allowed to repoint. */
-const ownedRelationRow = {
+const TRANSLATIONS_RELATION = {
   many_collection: "user_notification_translations",
   many_field: "languages_code",
-  one_collection: LEGACY_LANGUAGES_COLLECTION,
+  one_collection: LEGACY_LANGUAGE_COLLECTION,
   one_field: null,
   junction_field: "user_notification_id",
   sort_field: null,
   one_deselect_action: "nullify",
 };
 
-function run(tables: Tables, servicesOverrides: Partial<ServiceSpies> = {}) {
-  const knex = createKnex(tables);
+const THIRD_PARTY_RELATION = {
+  many_collection: "some_other_extension_translations",
+  many_field: "languages_code",
+  one_collection: LEGACY_LANGUAGE_COLLECTION,
+  one_field: null,
+  junction_field: null,
+  sort_field: null,
+  one_deselect_action: "nullify",
+};
+
+const bothCollectionsExist = [
+  { collection: LEGACY_LANGUAGE_COLLECTION },
+  { collection: LANGUAGE_COLLECTION },
+];
+
+function migrate(tables: Tables, overrides: Partial<ServiceCalls> = {}) {
   const logger = createLogger();
-  const { services, spies } = createServices(servicesOverrides);
+  const { services, calls } = createServices(overrides);
 
   return {
-    knex,
     logger,
-    spies,
-    result: migrateLanguagesToLanguage({
-      knex,
+    calls,
+    result: migrateLegacyLanguageCollection({
+      knex: createKnex(tables),
       services,
       schema: {},
       logger,
@@ -141,340 +145,267 @@ function run(tables: Tables, servicesOverrides: Partial<ServiceSpies> = {}) {
   };
 }
 
-/* -------------------------------------------------------------------------- */
-/* Tests                                                                       */
-/* -------------------------------------------------------------------------- */
+const englishOnly = [{ code: "en-US", name: "English", direction: "ltr" }];
 
-describe("migrateLanguagesToLanguage (BREAKING CHANGE: languages -> language)", () => {
+describe("migrateLegacyLanguageCollection", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("exposes the collection names and the relations it owns", () => {
-    expect(LEGACY_LANGUAGES_COLLECTION).toBe("languages");
+  it("expõe os nomes das coleções e as relações que pode repontar", () => {
+    expect(LEGACY_LANGUAGE_COLLECTION).toBe("languages");
     expect(LANGUAGE_COLLECTION).toBe("language");
     expect(OWNED_LANGUAGE_RELATIONS).toContain(
       "user_notification_translations.languages_code",
     );
   });
 
-  describe("Environment 1: only the legacy `languages` collection has data", () => {
-    it("copies every row, repoints the relation and drops the legacy collection", async () => {
-      const { result, spies } = run({
-        directus_collections: [
-          { collection: LEGACY_LANGUAGES_COLLECTION },
-          { collection: LANGUAGE_COLLECTION },
-        ],
-        directus_relations: [ownedRelationRow],
-        languages: [
-          { code: "en-US", name: "English", direction: "ltr" },
-          { code: "pt-BR", name: "Português (Brasil)", direction: "ltr" },
-        ],
-        language: [],
+  describe("quando só a coleção legada tem dados", () => {
+    const tables = (): Tables => ({
+      directus_collections: bothCollectionsExist,
+      directus_relations: [TRANSLATIONS_RELATION],
+      languages: [
+        { code: "en-US", name: "English", direction: "ltr" },
+        { code: "pt-BR", name: "Português (Brasil)", direction: "ltr" },
+      ],
+      language: [],
+    });
+
+    it("copia as linhas, repointa a relação e derruba a coleção legada", async () => {
+      const { result, calls } = migrate(tables());
+
+      await expect(result).resolves.toEqual({
+        status: "migrated",
+        copied: 2,
+        relationsRepointed: 1,
+        legacyDropped: true,
+        blockedBy: [],
       });
 
-      const migration = await result;
-
-      expect(migration.status).toBe("migrated");
-      expect(migration.copied).toBe(2);
-      expect(migration.relationsRepointed).toBe(1);
-      expect(migration.legacyDropped).toBe(true);
-      expect(migration.blockedBy).toEqual([]);
-
-      expect(spies.itemsCollections).toContain(LANGUAGE_COLLECTION);
-      expect(spies.itemsCreateOne).toHaveBeenCalledTimes(2);
-      expect(spies.itemsCreateOne).toHaveBeenCalledWith({
+      expect(calls.itemsServiceCollections).toContain(LANGUAGE_COLLECTION);
+      expect(calls.createLanguage).toHaveBeenCalledWith({
         code: "en-US",
         name: "English",
         direction: "ltr",
       });
-
-      expect(spies.relationsDeleteOne).toHaveBeenCalledWith(
+      expect(calls.deleteRelation).toHaveBeenCalledWith(
         "user_notification_translations",
         "languages_code",
       );
-      expect(spies.relationsCreateOne).toHaveBeenCalledWith(
+      expect(calls.dropCollection).toHaveBeenCalledWith(
+        LEGACY_LANGUAGE_COLLECTION,
+      );
+    });
+
+    it("recria a foreign key contra language.code preservando a junção", async () => {
+      const { result, calls } = migrate(tables());
+      await result;
+
+      expect(calls.createRelation).toHaveBeenCalledWith(
         expect.objectContaining({
           collection: "user_notification_translations",
           field: "languages_code",
           related_collection: LANGUAGE_COLLECTION,
+          schema: expect.objectContaining({
+            foreign_key_table: LANGUAGE_COLLECTION,
+            foreign_key_column: "code",
+            on_delete: "CASCADE",
+          }),
+          meta: expect.objectContaining({
+            one_collection: LANGUAGE_COLLECTION,
+            junction_field: "user_notification_id",
+          }),
         }),
       );
-
-      expect(spies.collectionsDeleteOne).toHaveBeenCalledWith(
-        LEGACY_LANGUAGES_COLLECTION,
-      );
     });
 
-    it("recreates the foreign key pointing at language.code and keeps the junction metadata", async () => {
-      const { result, spies } = run({
-        directus_collections: [
-          { collection: LEGACY_LANGUAGES_COLLECTION },
-          { collection: LANGUAGE_COLLECTION },
-        ],
-        directus_relations: [ownedRelationRow],
-        languages: [{ code: "en-US", name: "English", direction: "ltr" }],
-        language: [],
-      });
-
-      await result;
-
-      const payload = spies.relationsCreateOne.mock.calls[0]![0];
-      expect(payload.schema).toMatchObject({
-        table: "user_notification_translations",
-        column: "languages_code",
-        foreign_key_table: LANGUAGE_COLLECTION,
-        foreign_key_column: "code",
-        on_delete: "CASCADE",
-      });
-      expect(payload.meta).toMatchObject({
-        many_collection: "user_notification_translations",
-        many_field: "languages_code",
-        one_collection: LANGUAGE_COLLECTION,
-        junction_field: "user_notification_id",
-      });
-    });
-
-    it("copies rows before recreating the foreign key", async () => {
+    it("copia antes de recriar a foreign key e derruba por último", async () => {
       const order: string[] = [];
-      const { result } = run(
-        {
-          directus_collections: [
-            { collection: LEGACY_LANGUAGES_COLLECTION },
-            { collection: LANGUAGE_COLLECTION },
-          ],
-          directus_relations: [ownedRelationRow],
-          languages: [{ code: "en-US", name: "English", direction: "ltr" }],
-          language: [],
-        },
-        {
-          itemsCreateOne: vi.fn(async () => {
-            order.push("copy");
-          }),
-          relationsCreateOne: vi.fn(async () => {
-            order.push("relation");
-          }),
-          collectionsDeleteOne: vi.fn(async () => {
-            order.push("drop");
-          }),
-        },
-      );
+      const record = <TFn extends (...args: never[]) => Promise<unknown>>(
+        step: string,
+      ) => vi.fn<TFn>((async () => void order.push(step)) as TFn);
 
+      const { result } = migrate(tables(), {
+        createLanguage: record<ItemsService["createOne"]>("copy"),
+        createRelation: record<RelationsService["createOne"]>("relation"),
+        dropCollection: record<CollectionsService["deleteOne"]>("drop"),
+      });
       await result;
 
-      expect(order).toEqual(["copy", "relation", "drop"]);
+      expect(order).toEqual(["copy", "copy", "relation", "drop"]);
     });
   });
 
-  describe("Environment 2: only `language` exists (inframe already installed)", () => {
-    it("is a no-op and never touches the schema", async () => {
-      const { result, spies, logger } = run({
+  describe("quando só a coleção nova existe (inframe já instalado)", () => {
+    it("não faz nada e não registra erro", async () => {
+      const { result, calls, logger } = migrate({
         directus_collections: [{ collection: LANGUAGE_COLLECTION }],
         directus_relations: [],
         language: [{ code: "pt-BR", name: "Português", direction: "ltr" }],
       });
 
-      const migration = await result;
-
-      expect(migration.status).toBe("skipped");
-      expect(migration.copied).toBe(0);
-      expect(migration.legacyDropped).toBe(false);
-      expect(spies.itemsCreateOne).not.toHaveBeenCalled();
-      expect(spies.relationsDeleteOne).not.toHaveBeenCalled();
-      expect(spies.collectionsDeleteOne).not.toHaveBeenCalled();
+      await expect(result).resolves.toMatchObject({
+        status: "skipped",
+        copied: 0,
+        legacyDropped: false,
+      });
+      expect(calls.createLanguage).not.toHaveBeenCalled();
+      expect(calls.deleteRelation).not.toHaveBeenCalled();
+      expect(calls.dropCollection).not.toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });
   });
 
-  describe("Environment 3: both collections exist with overlapping rows", () => {
-    it("inserts only the missing codes and never overwrites existing ones", async () => {
-      const { result, spies } = run({
-        directus_collections: [
-          { collection: LEGACY_LANGUAGES_COLLECTION },
-          { collection: LANGUAGE_COLLECTION },
-        ],
-        directus_relations: [ownedRelationRow],
+  describe("quando as duas existem com códigos sobrepostos", () => {
+    it("insere só os códigos faltantes e não sobrescreve os existentes", async () => {
+      const { result, calls } = migrate({
+        directus_collections: bothCollectionsExist,
+        directus_relations: [TRANSLATIONS_RELATION],
         languages: [
           { code: "en-US", name: "English", direction: "ltr" },
           { code: "pt-BR", name: "Português (Brasil)", direction: "ltr" },
           { code: "es-ES", name: "Español", direction: "ltr" },
         ],
-        language: [
-          // inframe's own rows — different `name`, must be preserved
-          { code: "pt-BR", name: "Português", direction: "ltr" },
-        ],
+        language: [{ code: "pt-BR", name: "Português", direction: "ltr" }],
       });
 
-      const migration = await result;
+      await expect(result).resolves.toMatchObject({
+        status: "migrated",
+        copied: 2,
+      });
 
-      expect(migration.status).toBe("migrated");
-      expect(migration.copied).toBe(2);
-
-      const copiedCodes = spies.itemsCreateOne.mock.calls.map(
-        (call) => (call[0] as { code: string }).code,
+      const copiedCodes = calls.createLanguage.mock.calls.map(
+        ([language]) => language.code,
       );
       expect(copiedCodes.sort()).toEqual(["en-US", "es-ES"]);
-      expect(copiedCodes).not.toContain("pt-BR");
-
-      expect(spies.collectionsDeleteOne).toHaveBeenCalledWith(
-        LEGACY_LANGUAGES_COLLECTION,
+      expect(calls.dropCollection).toHaveBeenCalledWith(
+        LEGACY_LANGUAGE_COLLECTION,
       );
     });
   });
 
-  describe("Environment 4: neither collection exists (fresh install)", () => {
-    it("is a no-op", async () => {
-      const { result, spies, logger } = run({
+  describe("quando nenhuma das duas existe (instalação nova)", () => {
+    it("não faz nada e não registra erro", async () => {
+      const { result, calls, logger } = migrate({
         directus_collections: [],
         directus_relations: [],
       });
 
-      const migration = await result;
-
-      expect(migration.status).toBe("skipped");
-      expect(migration.copied).toBe(0);
-      expect(migration.legacyDropped).toBe(false);
-      expect(spies.collectionsDeleteOne).not.toHaveBeenCalled();
+      await expect(result).resolves.toMatchObject({
+        status: "skipped",
+        copied: 0,
+        legacyDropped: false,
+      });
+      expect(calls.dropCollection).not.toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });
   });
 
-  describe("Environment 5: `languages` is still referenced by a third-party collection", () => {
-    it("migrates the data but refuses to drop the legacy collection", async () => {
-      const { result, spies, logger } = run({
-        directus_collections: [
-          { collection: LEGACY_LANGUAGES_COLLECTION },
-          { collection: LANGUAGE_COLLECTION },
-        ],
-        directus_relations: [
-          ownedRelationRow,
-          {
-            many_collection: "some_other_extension_translations",
-            many_field: "languages_code",
-            one_collection: LEGACY_LANGUAGES_COLLECTION,
-            one_field: null,
-            junction_field: null,
-            sort_field: null,
-            one_deselect_action: "nullify",
-          },
-        ],
-        languages: [{ code: "en-US", name: "English", direction: "ltr" }],
+  describe("quando outra extensão ainda referencia a coleção legada", () => {
+    it("migra os dados mas se recusa a derrubar a coleção", async () => {
+      const { result, calls, logger } = migrate({
+        directus_collections: bothCollectionsExist,
+        directus_relations: [TRANSLATIONS_RELATION, THIRD_PARTY_RELATION],
+        languages: englishOnly,
         language: [],
       });
 
-      const migration = await result;
-
-      expect(migration.status).toBe("partial");
-      expect(migration.copied).toBe(1);
-      expect(migration.legacyDropped).toBe(false);
-      expect(migration.blockedBy).toEqual([
-        "some_other_extension_translations.languages_code",
-      ]);
-      expect(spies.collectionsDeleteOne).not.toHaveBeenCalled();
+      await expect(result).resolves.toEqual({
+        status: "partial",
+        copied: 1,
+        relationsRepointed: 1,
+        legacyDropped: false,
+        blockedBy: ["some_other_extension_translations.languages_code"],
+      });
+      expect(calls.dropCollection).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalled();
     });
   });
 
-  describe("Environment 6: failures never block the extension boot", () => {
-    it("logs and returns when dropping the legacy collection throws", async () => {
-      const { result, logger } = run(
+  describe("quando algo falha, o boot nunca é bloqueado", () => {
+    it("registra e devolve parcial se derrubar a coleção lançar", async () => {
+      const { result, logger } = migrate(
         {
-          directus_collections: [
-            { collection: LEGACY_LANGUAGES_COLLECTION },
-            { collection: LANGUAGE_COLLECTION },
-          ],
-          directus_relations: [ownedRelationRow],
-          languages: [{ code: "en-US", name: "English", direction: "ltr" }],
+          directus_collections: bothCollectionsExist,
+          directus_relations: [TRANSLATIONS_RELATION],
+          languages: englishOnly,
           language: [],
         },
         {
-          collectionsDeleteOne: vi
-            .fn()
+          dropCollection: vi
+            .fn<CollectionsService["deleteOne"]>()
             .mockRejectedValue(new Error("permission denied")),
         },
       );
 
-      const migration = await result;
-
-      expect(migration.legacyDropped).toBe(false);
-      expect(migration.status).toBe("partial");
+      await expect(result).resolves.toMatchObject({
+        status: "partial",
+        legacyDropped: false,
+      });
       expect(logger.error).toHaveBeenCalled();
     });
 
-    it("keeps copying the remaining rows when a single insert fails", async () => {
-      const itemsCreateOne = vi
-        .fn()
+    it("segue copiando as demais linhas quando uma inserção falha", async () => {
+      const createLanguage = vi
+        .fn<ItemsService["createOne"]>()
         .mockRejectedValueOnce(new Error("constraint violation"))
         .mockResolvedValue(undefined);
 
-      const { result, logger } = run(
+      const { result, logger } = migrate(
         {
-          directus_collections: [
-            { collection: LEGACY_LANGUAGES_COLLECTION },
-            { collection: LANGUAGE_COLLECTION },
-          ],
-          directus_relations: [ownedRelationRow],
+          directus_collections: bothCollectionsExist,
+          directus_relations: [TRANSLATIONS_RELATION],
           languages: [
             { code: "en-US", name: "English", direction: "ltr" },
             { code: "pt-BR", name: "Português (Brasil)", direction: "ltr" },
           ],
           language: [],
         },
-        { itemsCreateOne },
+        { createLanguage },
       );
 
-      const migration = await result;
-
-      expect(itemsCreateOne).toHaveBeenCalledTimes(2);
-      expect(migration.copied).toBe(1);
+      await expect(result).resolves.toMatchObject({ copied: 1 });
+      expect(createLanguage).toHaveBeenCalledTimes(2);
       expect(logger.warn).toHaveBeenCalled();
     });
 
-    it("aborts without dropping anything when the target collection is missing", async () => {
-      const { result, spies, logger } = run({
-        directus_collections: [{ collection: LEGACY_LANGUAGES_COLLECTION }],
-        directus_relations: [ownedRelationRow],
-        languages: [{ code: "en-US", name: "English", direction: "ltr" }],
+    it("aborta sem derrubar nada quando a coleção nova não existe", async () => {
+      const { result, calls, logger } = migrate({
+        directus_collections: [{ collection: LEGACY_LANGUAGE_COLLECTION }],
+        directus_relations: [TRANSLATIONS_RELATION],
+        languages: englishOnly,
       });
 
-      const migration = await result;
-
-      expect(migration.status).toBe("skipped");
-      expect(spies.collectionsDeleteOne).not.toHaveBeenCalled();
-      expect(spies.itemsCreateOne).not.toHaveBeenCalled();
+      await expect(result).resolves.toMatchObject({ status: "skipped" });
+      expect(calls.dropCollection).not.toHaveBeenCalled();
+      expect(calls.createLanguage).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalled();
     });
   });
 
-  describe("Environment 7: idempotency", () => {
-    it("is a clean no-op on the second boot", async () => {
-      const tables: Tables = {
-        directus_collections: [
-          { collection: LEGACY_LANGUAGES_COLLECTION },
-          { collection: LANGUAGE_COLLECTION },
-        ],
-        directus_relations: [ownedRelationRow],
-        languages: [{ code: "en-US", name: "English", direction: "ltr" }],
+  describe("idempotência", () => {
+    it("não faz nada no segundo boot", async () => {
+      const first = await migrate({
+        directus_collections: bothCollectionsExist,
+        directus_relations: [TRANSLATIONS_RELATION],
+        languages: englishOnly,
         language: [],
-      };
-
-      const first = await run(tables).result;
+      }).result;
       expect(first.status).toBe("migrated");
 
-      // After the drop, Directus no longer knows about `languages`
-      const secondRun = run({
+      const second = migrate({
         directus_collections: [{ collection: LANGUAGE_COLLECTION }],
         directus_relations: [
-          { ...ownedRelationRow, one_collection: LANGUAGE_COLLECTION },
+          { ...TRANSLATIONS_RELATION, one_collection: LANGUAGE_COLLECTION },
         ],
-        language: [{ code: "en-US", name: "English", direction: "ltr" }],
+        language: englishOnly,
       });
 
-      const second = await secondRun.result;
-
-      expect(second.status).toBe("skipped");
-      expect(second.copied).toBe(0);
-      expect(second.legacyDropped).toBe(false);
-      expect(secondRun.spies.collectionsDeleteOne).not.toHaveBeenCalled();
-      expect(secondRun.logger.error).not.toHaveBeenCalled();
+      await expect(second.result).resolves.toMatchObject({
+        status: "skipped",
+        copied: 0,
+        legacyDropped: false,
+      });
+      expect(second.calls.dropCollection).not.toHaveBeenCalled();
+      expect(second.logger.error).not.toHaveBeenCalled();
     });
   });
 });
