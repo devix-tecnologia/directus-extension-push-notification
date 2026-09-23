@@ -52,7 +52,7 @@ export default defineHook(
             logger.info(
               `[DB Configuration] Collection '${collection.collection}' already exists, skipping`,
             );
-          } catch (e: unknown) {
+          } catch {
             // Get all fields for this collection
             const collectionFields = fields.filter(
               (f: Record<string, unknown>) =>
@@ -141,7 +141,7 @@ export default defineHook(
             logger.debug(
               `[DB Configuration] Field '${field.field}' in '${field.collection}' already exists`,
             );
-          } catch (e: unknown) {
+          } catch {
             logger.debug(
               `[DB Configuration] Creating field '${field.field}' in collection '${field.collection}'`,
             );

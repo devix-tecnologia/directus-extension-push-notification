@@ -134,9 +134,7 @@ class PushNotificationHandler implements PushEventHandler {
     }
 
     // Abre o dashboard do Directus
-    await self.clients.openWindow(
-      event.notification.data?.url || "/admin",
-    );
+    await self.clients.openWindow(event.notification.data?.url || "/admin");
   }
 }
 
