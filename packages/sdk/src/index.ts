@@ -6,12 +6,12 @@
  * @example
  * ```ts
  * // Import everything
- * import { PushNotificationClient, resolveTranslation } from "@anthropic/push-notification-sdk";
+ * import { PushNotificationClient, resolveTranslation } from "@devix-tecnologia/push-notification-sdk";
  *
  * // Or import specific modules
- * import type { UserNotification } from "@anthropic/push-notification-sdk/types";
- * import { PushNotificationClient } from "@anthropic/push-notification-sdk/client";
- * import { subscribe } from "@anthropic/push-notification-sdk/subscribe";
+ * import type { UserNotification } from "@devix-tecnologia/push-notification-sdk/types";
+ * import { PushNotificationClient } from "@devix-tecnologia/push-notification-sdk/client";
+ * import { subscribe } from "@devix-tecnologia/push-notification-sdk/subscribe";
  * ```
  */
 

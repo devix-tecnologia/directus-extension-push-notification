@@ -65,7 +65,7 @@ export function isPushSupported(): boolean {
  *
  * @example
  * ```ts
- * import { subscribe } from "@anthropic/push-notification-sdk/subscribe";
+ * import { subscribe } from "@devix-tecnologia/push-notification-sdk/subscribe";
  *
  * const result = await subscribe({
  *   vapidPublicKey: "BEl62i...",

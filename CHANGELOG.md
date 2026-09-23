@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `notification_translation` junction collection with `languages_code` support
   - Automatic language resolution based on user's configured language
   - Fallback chain: user language → default language → original notification fields
-- ✨ **TypeScript SDK** (`@anthropic/push-notification-sdk`)
+- ✨ **TypeScript SDK** (`@devix-tecnologia/push-notification-sdk`)
   - Typed API client for subscriptions, notifications, and deliveries
   - Browser subscription helpers with VAPID key support
   - Translation utilities for notification content

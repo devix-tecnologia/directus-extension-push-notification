@@ -1,11 +1,11 @@
-# @anthropic/push-notification-sdk
+# @devix-tecnologia/push-notification-sdk
 
 TypeScript SDK para integração com [directus-extension-push-notification](https://github.com/devix-tecnologia/directus-extension-push-notification).
 
 ## Instalação
 
 ```bash
-pnpm add @anthropic/push-notification-sdk
+pnpm add @devix-tecnologia/push-notification-sdk
 ```
 
 ## Uso
@@ -13,7 +13,7 @@ pnpm add @anthropic/push-notification-sdk
 ### API Client (Node.js / Backend)
 
 ```ts
-import { PushNotificationClient } from "@anthropic/push-notification-sdk";
+import { PushNotificationClient } from "@devix-tecnologia/push-notification-sdk";
 
 const client = new PushNotificationClient({
   baseUrl: "https://directus.example.com",
@@ -54,7 +54,7 @@ import {
   subscribe,
   unsubscribe,
   isPushSupported,
-} from "@anthropic/push-notification-sdk/subscribe";
+} from "@devix-tecnologia/push-notification-sdk/subscribe";
 
 if (isPushSupported()) {
   const result = await subscribe({
@@ -74,7 +74,7 @@ await unsubscribe("https://directus.example.com");
 ### Resolução de Tradução
 
 ```ts
-import { resolveTranslation } from "@anthropic/push-notification-sdk";
+import { resolveTranslation } from "@devix-tecnologia/push-notification-sdk";
 
 const resolved = resolveTranslation({
   title: "Default Title",
@@ -94,17 +94,17 @@ const resolved = resolveTranslation({
 import type {
   UserNotification,
   PushDelivery,
-} from "@anthropic/push-notification-sdk/types";
+} from "@devix-tecnologia/push-notification-sdk/types";
 ```
 
 ## Exports
 
-| Path                                         | Conteúdo                                     |
-| -------------------------------------------- | -------------------------------------------- |
-| `@anthropic/push-notification-sdk`           | Tudo (tipos, client, subscribe, translation) |
-| `@anthropic/push-notification-sdk/types`     | Apenas tipos                                 |
-| `@anthropic/push-notification-sdk/client`    | API client                                   |
-| `@anthropic/push-notification-sdk/subscribe` | Browser subscribe helpers                    |
+| Path                                                | Conteúdo                                     |
+| --------------------------------------------------- | -------------------------------------------- |
+| `@devix-tecnologia/push-notification-sdk`           | Tudo (tipos, client, subscribe, translation) |
+| `@devix-tecnologia/push-notification-sdk/types`     | Apenas tipos                                 |
+| `@devix-tecnologia/push-notification-sdk/client`    | API client                                   |
+| `@devix-tecnologia/push-notification-sdk/subscribe` | Browser subscribe helpers                    |
 
 ## Requisitos
 

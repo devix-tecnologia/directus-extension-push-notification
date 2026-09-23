@@ -1,5 +1,5 @@
 {
-  "name": "@anthropic/push-notification-sdk",
+  "name": "@devix-tecnologia/push-notification-sdk",
   "version": "0.1.0",
   "description": "TypeScript SDK for directus-extension-push-notification — types, API client, and browser subscription helpers",
   "type": "module",
