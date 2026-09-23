@@ -162,6 +162,7 @@ async function deactivateAllSubscriptions(
     for (const sub of data.data || []) {
       await deactivateSubscription(context, accessToken, sub.id);
     }
+
     if (data.data?.length > 0) {
       console.log(
         `🧹 ${data.data.length} subscription(s) antiga(s) desativada(s)`,
