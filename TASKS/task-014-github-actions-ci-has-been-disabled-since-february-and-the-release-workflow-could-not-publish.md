@@ -1,6 +1,6 @@
 # 🧩 Task 014 — GitHub Actions CI has been disabled since February and the release workflow could not publish
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 
