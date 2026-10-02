@@ -14,7 +14,7 @@ Both workflows were renamed to .disabled on 2026-02-12. Re-enabled as they were,
 - [x] CI: run on pushes to every branch and on PRs to `main`, and add the unit tests (`pnpm test:unit`)
 - [x] Release: Node 24 (pnpm 11.21 requires >= 22.13) and no pnpm version pin
 - [x] Release: stop `@semantic-release/git` from pushing the version commit to the protected `main`
-- [ ] ... — adiado: needs the npm account owner — Release: npm credential, trusted publishing (OIDC, no secret) or an `NPM_TOKEN` granular token
+- [x] Release: npm credential — trusted publisher (GitHub Actions, `package_deploy.yml`) configured on 2026-10-02 with `npm trust github`; no `NPM_TOKEN` needed
 - [x] Prove the CI green on GitHub on a branch before it reaches `develop`
 
 - [x] `pnpm/action-setup` v6: runs on Node 24 and declares pnpm 11 support (v4 ran on the deprecated Node 20)
@@ -45,9 +45,7 @@ Both workflows were renamed to .disabled on 2026-02-12. Re-enabled as they were,
 - Dependabot reads workflows from `main`, which still holds the `.disabled`
   files: its `github-actions` update keeps failing until `develop` reaches
   `main`.
-- npm credential, the one step left: either configure a trusted publisher for
-  `directus-extension-push-notification` on npmjs.com (GitHub Actions,
-  `devix-tecnologia/directus-extension-push-notification`, workflow
-  `package_deploy.yml`; the release job already has `id-token: write`), or
-  create a granular token and store it with
-  `gh secret set NPM_TOKEN --repo devix-tecnologia/directus-extension-push-notification`.
+- npm credential: trusted publisher created on 2026-10-02 by the account owner
+  (`npm trust github`, id `c34698e9-ebf3-4a16-ba43-d9a90b8e5268`, permissions
+  publish and stage publish). The release job publishes through OIDC with the
+  `id-token: write` it already has, and gets provenance attestations.
