@@ -1,6 +1,6 @@
 # 🧩 Task 015 — Protections around main and the npm release: required checks, admins under the rules, release bound to main
 
-- Status: pending
+- Status: in-progress
 - Type: chore
 - Assignee: sidartaveloso
 
