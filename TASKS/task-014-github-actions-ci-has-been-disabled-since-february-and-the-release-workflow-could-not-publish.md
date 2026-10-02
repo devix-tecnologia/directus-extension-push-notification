@@ -5,6 +5,7 @@
 - Assignee: sidartaveloso
 
 ## Description
+
 Both workflows were renamed to .disabled on 2026-02-12. Re-enabled as they were, both would fail: pnpm/action-setup pins version 9 against packageManager pnpm@11.21.0, the release job runs Node 20 while pnpm 11.21 requires >= 22.13, @semantic-release/git pushes the version commit straight to a main that requires a reviewed PR, and the repo has no npm credential. The CI only ran on PRs to main, never on develop, and ran no tests.
 
 ## Tasks
