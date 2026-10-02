@@ -9,6 +9,9 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -51,6 +54,9 @@ jobs:
   release:
     needs: [lint, typecheck, build]
     runs-on: ubuntu-latest
+    # O trusted publisher do npm exige este environment, e o GitHub só o
+    # libera para a main: editar o workflow noutra branch não publica.
+    environment: npm
     permissions:
       contents: write
       issues: write
