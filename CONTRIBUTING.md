@@ -315,10 +315,11 @@ Release is automatic via GitHub Actions when pushing/merging to `main`:
 
 1. Analyzes commits since last release
 2. Determines next version (major/minor/patch)
-3. Updates CHANGELOG.md
-4. Creates git tag
-5. Publishes to npm
-6. Creates GitHub release
+3. Publishes to npm
+4. Creates the git tag and the GitHub release, with the release notes
+
+The new version is not committed back to `package.json`: `main` only accepts
+reviewed pull requests, so the published version lives in the tag and on npm.
 
 ## 🐛 Debugging
 
