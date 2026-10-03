@@ -45,3 +45,7 @@ main required a reviewed PR but no status check, admins bypassed everything, the
   one (`c34698e9-ebf3-4a16-ba43-d9a90b8e5268`) was revoked first, then the new
   one was created: `0cbcc303-0249-41c8-91c1-74d7d5c3e9f2`, environment `npm`,
   publish and stage publish. Each step needs the account owner's 2FA.
+- Adjusted the same day at Sidarta's request: `main` requires the PR and the
+  four checks but **zero approvals** (GitHub does not let an author approve
+  their own PR), and merging into `main` — which publishes to npm — is
+  restricted to `sidartaveloso`. The others still open PRs; only he merges.
