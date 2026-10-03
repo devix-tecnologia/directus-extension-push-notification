@@ -9,17 +9,18 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: "24"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
@@ -29,12 +30,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: "24"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
@@ -43,12 +42,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: "24"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -57,6 +54,9 @@ jobs:
   release:
     needs: [lint, typecheck, build]
     runs-on: ubuntu-latest
+    # O trusted publisher do npm exige este environment, e o GitHub só o
+    # libera para a main: editar o workflow noutra branch não publica.
+    environment: npm
     permissions:
       contents: write
       issues: write
@@ -68,13 +68,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies

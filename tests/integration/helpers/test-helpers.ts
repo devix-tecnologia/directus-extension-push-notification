@@ -251,7 +251,8 @@ export async function updateUserPushEnabled(
 }
 
 /**
- * Cria um registro de idioma na tabela languages
+ * Cria um registro de idioma na collection `language`
+ * (singular — padrão Devix, ver task 010 / BREAKING CHANGE)
  */
 export async function createLanguage(
   code: string,
@@ -260,7 +261,7 @@ export async function createLanguage(
 ): Promise<void> {
   await dockerHttpRequest(
     "POST",
-    "/items/languages",
+    "/items/language",
     {
       code,
       name,

@@ -1,5 +1,6 @@
 import { defineHook } from "@directus/extensions-sdk";
 import webpush from "web-push";
+import { assertIconReadable } from "./assert-icon-readable.js";
 import { resolveIconUrl } from "./resolve-icon.js";
 import { resolveTranslation } from "./resolve-translation.js";
 
@@ -24,13 +25,31 @@ export default defineHook(({ filter, action }, { services, logger }) => {
 
   logger.info("[Notification Trigger] Hook registered");
 
-  filter("user_notification.items.create", async (payload) => {
-    logger.debug(
-      "[Notification Trigger] Filter user_notification.items.create",
-      { payload },
+  const guardIcon: Parameters<typeof filter>[1] = async (
+    payload,
+    _meta,
+    context,
+  ) => {
+    const schema = context.schema;
+
+    if (!schema) return payload;
+
+    await assertIconReadable(
+      payload as Record<string, unknown>,
+      (accountability) =>
+        new ItemsService("directus_files", {
+          accountability,
+          schema,
+          knex: context.database,
+        }),
+      context.accountability,
     );
+
     return payload;
-  });
+  };
+
+  filter("user_notification.items.create", guardIcon);
+  filter("user_notification.items.update", guardIcon);
 
   action("items.create", async (meta, { schema, database }) => {
     try {

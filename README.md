@@ -19,6 +19,34 @@
 
 ![Subscription](https://raw.githubusercontent.com/devix-tecnologia/directus-extension-push-notification/main/docs/push-subscription.png)
 
+## 🚨 BREAKING CHANGE in v1.0.0 — `languages` is now `language`
+
+> **The `languages` collection (plural) was renamed to `language` (singular)** and the
+> legacy collection is **dropped** during the upgrade.
+>
+> `language` is the Devix Tecnologia convention, already used by
+> [`directus-extension-inframe`](https://github.com/devix-tecnologia/directus-extension-inframe).
+> Before v1.0.0, installing both extensions on the same instance produced two
+> collections with the same purpose, differing only by plural/singular.
+>
+> **What happens on upgrade (automatically, on Directus boot):**
+>
+> 1. `language` is created if it does not exist yet;
+> 2. every row of `languages` missing in `language` is copied (matched by `code`) —
+>    rows already present in `language` are **never** overwritten;
+> 3. the `user_notification_translations.languages_code` relation is repointed to `language`;
+> 4. if no other collection still references `languages`, it is **dropped**;
+>    otherwise the drop is skipped and a warning is logged.
+>
+> **What you must do:**
+>
+> - **Back up your database** before upgrading — the legacy table is dropped.
+> - Replace every `/items/languages` call with `/items/language` in your apps,
+>   flows and presets.
+>
+> The `user_notification_translations.languages_code` **field keeps its name** —
+> only the collection was renamed, so translation payloads are unchanged.
+
 ## ✨ Features
 
 - 🔔 **Multi-device support** - One user can have multiple active subscriptions (Desktop, Mobile, Tablet)

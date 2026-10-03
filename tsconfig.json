@@ -26,19 +26,14 @@
     "isolatedModules": true,
     "rootDir": "./"
   },
-  "include": ["./src/**/*.ts"],
+  "include": ["./src/**/*.ts", "./tests/**/*.ts", "./vitest.config.ts"],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/*.e2e.ts",
-    "tests",
     "test-results",
     "playwright-report",
     "test-user-data-dir",
     "scripts",
-    "vitest.config.ts",
     "playwright.config.cjs"
   ]
 }

@@ -118,9 +118,9 @@
       "schema": {}
     },
     {
-      "collection": "languages",
+      "collection": "language",
       "meta": {
-        "collection": "languages",
+        "collection": "language",
         "icon": "translate",
         "note": "Códigos de idioma disponíveis para traduções",
         "display_template": "{{name}} ({{code}})",
@@ -1908,8 +1908,18 @@
             "translation": "URL do Ícone"
           }
         ],
-        "note": "URL externa do ícone (alternativa ao upload de arquivo)",
-        "conditions": null,
+        "note": "URL externa do ícone (alternativa ao upload de arquivo).",
+        "conditions": [
+          {
+            "name": "Oculta quando há arquivo",
+            "rule": {
+              "icon": {
+                "_nempty": true
+              }
+            },
+            "hidden": true
+          }
+        ],
         "required": false,
         "group": null,
         "validation": null,
@@ -1963,8 +1973,18 @@
             "translation": "Ícone"
           }
         ],
-        "note": "Ícone da notificação (upload de imagem, tem prioridade sobre URL externa). Deve ser acessível publicamente.",
-        "conditions": null,
+        "note": "Ícone da notificação (upload de imagem). Servido pelo endpoint da extensão, então o arquivo não precisa ser público.",
+        "conditions": [
+          {
+            "name": "Oculta quando há URL externa",
+            "rule": {
+              "icon_url": {
+                "_nempty": true
+              }
+            },
+            "hidden": true
+          }
+        ],
         "required": false,
         "group": null,
         "validation": null,
@@ -2207,7 +2227,7 @@
         "special": ["translations"],
         "interface": "translations",
         "options": {
-          "languageField": "languages_code",
+          "languageField": "code",
           "languageDirectionField": "direction",
           "defaultLanguage": "en-US",
           "userLanguage": true
@@ -2215,7 +2235,7 @@
         "display": "translations",
         "display_options": {
           "template": "{{title}}",
-          "languageField": "languages_code",
+          "languageField": "code",
           "defaultLanguage": "en-US",
           "userLanguage": true
         },
@@ -2243,12 +2263,12 @@
       }
     },
     {
-      "collection": "languages",
+      "collection": "language",
       "field": "code",
       "type": "string",
       "schema": {
         "name": "code",
-        "table": "languages",
+        "table": "language",
         "data_type": "varchar",
         "default_value": null,
         "max_length": 10,
@@ -2265,7 +2285,7 @@
         "foreign_key_table": null
       },
       "meta": {
-        "collection": "languages",
+        "collection": "language",
         "field": "code",
         "special": null,
         "interface": "input",
@@ -2289,12 +2309,12 @@
       }
     },
     {
-      "collection": "languages",
+      "collection": "language",
       "field": "name",
       "type": "string",
       "schema": {
         "name": "name",
-        "table": "languages",
+        "table": "language",
         "data_type": "varchar",
         "default_value": null,
         "max_length": 100,
@@ -2311,7 +2331,7 @@
         "foreign_key_table": null
       },
       "meta": {
-        "collection": "languages",
+        "collection": "language",
         "field": "name",
         "special": null,
         "interface": "input",
@@ -2335,12 +2355,12 @@
       }
     },
     {
-      "collection": "languages",
+      "collection": "language",
       "field": "direction",
       "type": "string",
       "schema": {
         "name": "direction",
-        "table": "languages",
+        "table": "language",
         "data_type": "varchar",
         "default_value": "ltr",
         "max_length": 3,
@@ -2357,21 +2377,33 @@
         "foreign_key_table": null
       },
       "meta": {
-        "collection": "languages",
+        "collection": "language",
         "field": "direction",
         "special": null,
         "interface": "select-dropdown",
         "options": {
           "choices": [
-            { "text": "Left to Right", "value": "ltr" },
-            { "text": "Right to Left", "value": "rtl" }
+            {
+              "text": "Left to Right",
+              "value": "ltr"
+            },
+            {
+              "text": "Right to Left",
+              "value": "rtl"
+            }
           ]
         },
         "display": "labels",
         "display_options": {
           "choices": [
-            { "text": "LTR", "value": "ltr" },
-            { "text": "RTL", "value": "rtl" }
+            {
+              "text": "LTR",
+              "value": "ltr"
+            },
+            {
+              "text": "RTL",
+              "value": "rtl"
+            }
           ]
         },
         "readonly": false,
@@ -2496,7 +2528,7 @@
         "is_primary_key": false,
         "has_auto_increment": false,
         "foreign_key_column": "code",
-        "foreign_key_table": "languages"
+        "foreign_key_table": "language"
       },
       "meta": {
         "collection": "user_notification_translations",
@@ -2781,11 +2813,11 @@
     {
       "collection": "user_notification_translations",
       "field": "languages_code",
-      "related_collection": "languages",
+      "related_collection": "language",
       "schema": {
         "table": "user_notification_translations",
         "column": "languages_code",
-        "foreign_key_table": "languages",
+        "foreign_key_table": "language",
         "foreign_key_column": "code",
         "on_update": "NO ACTION",
         "on_delete": "CASCADE",
@@ -2794,7 +2826,7 @@
       "meta": {
         "many_collection": "user_notification_translations",
         "many_field": "languages_code",
-        "one_collection": "languages",
+        "one_collection": "language",
         "one_field": null,
         "one_collection_field": null,
         "one_allowed_collections": null,

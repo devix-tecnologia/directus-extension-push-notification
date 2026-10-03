@@ -1,8 +1,8 @@
 # Task 007 — Suporte a Multi-idioma no Título e Body da Notificação
 
-Status: done
-Type: feature
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feature
+- Assignee: Sidarta Veloso
 
 ## Description
 

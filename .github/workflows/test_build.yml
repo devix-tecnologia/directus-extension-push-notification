@@ -1,17 +1,27 @@
 name: CI
 
 on:
+  push:
+    # Na main quem roda é o Release, com os mesmos jobs antes de publicar.
+    branches-ignore: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      # Sem `version`: a action lê o `packageManager` do package.json e recusa
+      # uma versão fixada aqui que conflite com ele.
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -27,9 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -39,13 +47,25 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Unit tests
+        run: pnpm test:unit
+
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: "24"

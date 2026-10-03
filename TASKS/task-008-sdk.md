@@ -1,12 +1,12 @@
 # Task 008 — SDK para Push Notification Extension
 
-Status: done
-Type: feature
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feature
+- Assignee: Sidarta Veloso
 
 ## Description
 
-Criar um pacote SDK TypeScript (`@anthropic/push-notification-sdk`) que expõe tipos, API client e helpers reutilizáveis para integração com a extensão `directus-extension-push-notification`.
+Criar um pacote SDK TypeScript (`@devix-tecnologia/push-notification-sdk`) que expõe tipos, API client e helpers reutilizáveis para integração com a extensão `directus-extension-push-notification`.
 
 ### Motivação
 

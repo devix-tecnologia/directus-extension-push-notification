@@ -96,7 +96,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "postbuild": "cp ./directus-state.json ./dist/directus-state.json && cp ./service-worker.js ./dist/service-worker.js",
     "add-extension": "directus-extension add",
     "generate:vapid": "node scripts/generate-test-vapid-keys.js",
@@ -107,6 +107,7 @@
     "test": "pnpm test:e2e",
     "test:integration:env-up": "docker-compose --env-file .env.test -f docker-compose.test.yml up -d --wait",
     "test:integration:env-down": "docker-compose -f docker-compose.test.yml down",
+    "test:unit": "vitest run tests/unit",
     "test:integration:run": "vitest run tests/integration",
     "test:integration": "pnpm run test:integration:run",
     "test:integration:watch": "vitest tests/integration",
@@ -124,7 +125,6 @@
     "@directus/extensions-sdk": "17.0.9",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.2",
-    "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
     "@semantic-release/npm": "^13.1.4",
     "@types/express": "^5.0.6",
@@ -137,7 +137,7 @@
     "globals": "^17.3.0",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
-    "taskin": "^2.3.1",
+    "taskin": "^4.4.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"
@@ -145,7 +145,7 @@
   "dependencies": {
     "web-push": "^3.6.7"
   },
-  "packageManager": "pnpm@10.29.2",
+  "packageManager": "pnpm@11.21.0",
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"

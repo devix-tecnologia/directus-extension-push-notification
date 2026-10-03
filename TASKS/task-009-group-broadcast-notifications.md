@@ -1,8 +1,8 @@
 # Task 009 — Notificações em Grupo/Broadcast
 
-Status: pending
-Type: feature
-Assignee: TBD
+- Status: pending
+- Type: feature
+- Assignee: TBD
 
 ## Description
 

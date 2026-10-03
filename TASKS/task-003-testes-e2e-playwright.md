@@ -1,8 +1,8 @@
 # Task 003 — Testes E2E com Playwright
 
-Status: done  
-Type: feat  
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feat
+- Assignee: Sidarta Veloso
 
 ## Description
 
