@@ -16,7 +16,11 @@ export default defineEndpoint((router, { env, logger }) => {
       const vapidPublicKey = env["PUSH_PUBLIC_VAPID_KEY"] || "";
       const publicUrl = env["PUBLIC_URL"] || "";
 
-      const clientScript = getClientScript(vapidPublicKey, publicUrl);
+      const debug = String(env["PUSH_CLIENT_DEBUG"]) === "true";
+
+      const clientScript = getClientScript(vapidPublicKey, publicUrl, {
+        debug,
+      });
 
       res.setHeader("Content-Type", "application/javascript; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
