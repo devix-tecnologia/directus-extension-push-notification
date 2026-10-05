@@ -1,6 +1,6 @@
 # 🧩 Task 016 — client script writes to the user's browser console on every page load
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 
