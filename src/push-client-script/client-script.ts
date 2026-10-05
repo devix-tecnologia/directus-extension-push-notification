@@ -6,11 +6,36 @@
  * 2. Verifica se o usuário quer receber push (push_enabled)
  * 3. Solicita permissão de notificação
  * 4. Cria subscription e envia para o backend
+ *
+ * Por padrão o script não escreve nada no console do navegador do usuário.
+ * O diagnóstico é opt-in (`debug: true`, ligado no servidor por
+ * PUSH_CLIENT_DEBUG=true) e usa apenas console.debug.
  */
+
+export interface ClientScriptOptions {
+  debug?: boolean;
+}
+
+const SILENT_LOGGER = `
+  function log() {}
+  function warn() {}
+  function error() {}`;
+
+const DEBUG_LOGGER = `
+  function log(...args) {
+    console.debug('[PushNotification]', ...args);
+  }
+  function warn(...args) {
+    console.debug('[PushNotification] (warn)', ...args);
+  }
+  function error(...args) {
+    console.debug('[PushNotification] (error)', ...args);
+  }`;
 
 export function getClientScript(
   vapidPublicKey: string,
   publicUrl: string,
+  { debug = false }: ClientScriptOptions = {},
 ): string {
   return `
 (function() {
@@ -18,25 +43,7 @@ export function getClientScript(
   
   const VAPID_PUBLIC_KEY = '${vapidPublicKey}';
   const PUBLIC_URL = '${publicUrl}';
-  const DEBUG = true;
-  
-  function log(...args) {
-    console.log('[PushNotification]', ...args);
-  }
-  
-  function warn(...args) {
-    console.warn('[PushNotification]', ...args);
-  }
-  
-  function error(...args) {
-    console.error('[PushNotification]', ...args);
-  }
-  
-  log('=== Script carregado ===');
-  log('VAPID_PUBLIC_KEY:', VAPID_PUBLIC_KEY ? 'configurada (' + VAPID_PUBLIC_KEY.substring(0, 20) + '...)' : 'NÃO CONFIGURADA');
-  log('PUBLIC_URL:', PUBLIC_URL);
-  log('Protocol:', window.location.protocol);
-  log('Host:', window.location.host);
+${debug ? DEBUG_LOGGER : SILENT_LOGGER}
 
   function urlBase64ToUint8Array(base64String) {
     try {
@@ -49,7 +56,6 @@ export function getClientScript(
       for (let i = 0; i < rawData.length; ++i) {
         outputArray[i] = rawData.charCodeAt(i);
       }
-      log('VAPID key convertida para Uint8Array, length:', outputArray.length);
       return outputArray;
     } catch (e) {
       error('Erro ao converter VAPID key:', e);
@@ -79,7 +85,6 @@ export function getClientScript(
       }
 
       const data = await response.json();
-      log('Dados do usuário:', data.data);
       return data.data;
     } catch (e) {
       error('Erro ao buscar configurações:', e);
@@ -159,7 +164,6 @@ export function getClientScript(
     log('Suporte OK, verificando usuário...');
 
     const user = await getUserPushSettings();
-    log('Resultado getUserPushSettings:', user);
     
     if (!user) {
       log('Usuário não autenticado ou erro ao buscar configurações');
@@ -217,13 +221,10 @@ export function getClientScript(
       }
 
       log('Criando nova subscription...');
-      log('VAPID_PUBLIC_KEY length:', VAPID_PUBLIC_KEY.length);
-      log('applicationServerKey (VAPID):', VAPID_PUBLIC_KEY.substring(0, 30) + '...');
       
       let applicationServerKey;
       try {
         applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-        log('applicationServerKey criada, byteLength:', applicationServerKey.byteLength);
       } catch (e) {
         error('Erro ao converter VAPID key para Uint8Array:', e);
         throw e;
@@ -235,7 +236,6 @@ export function getClientScript(
       });
 
       log('Subscription criada:', subscription.endpoint);
-      log('Subscription keys:', JSON.stringify(subscription.toJSON().keys));
 
       const registered = await registerSubscription(subscription, getDeviceName());
       if (registered) {
