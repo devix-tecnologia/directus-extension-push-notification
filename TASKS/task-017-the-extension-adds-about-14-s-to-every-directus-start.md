@@ -1,6 +1,6 @@
 # 🧩 Task 017 — the extension adds about 14 s to every Directus start
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 
