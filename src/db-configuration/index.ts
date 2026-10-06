@@ -6,6 +6,12 @@ import {
   type DirectusKnex,
   type DirectusServices,
 } from "./migrate-languages.js";
+import {
+  migrateM2oColumnsToUuid,
+  relationFailuresMessage,
+  uuidForeignKeyColumns,
+  type RawKnex,
+} from "./migrate-m2o-uuid.js";
 
 /**
  * O tipo de `services` do SDK não é estruturalmente compatível com a interface
@@ -194,7 +200,16 @@ export default defineHook(
         logger,
       });
 
+      // Colunas m2o criadas como char(36) por versões anteriores viram uuid
+      // antes das relações, senão a foreign key continua recusada.
+      await migrateM2oColumnsToUuid({
+        knex: database as unknown as RawKnex,
+        columns: uuidForeignKeyColumns(directusState),
+        logger,
+      });
+
       // STEP 3: Create relations
+      const relationFailures: string[] = [];
       if (relations.length > 0) {
         // Refresh schema again before relations
         const updatedSchema = await getSchema({ database: database });
@@ -246,7 +261,10 @@ export default defineHook(
               if (error?.stack) {
                 logger.error(`[DB Configuration] Stack trace: ${error.stack}`);
               }
-              // Não fazer throw - continuar com outras relações
+
+              relationFailures.push(
+                `${relation.collection}.${relation.field} -> ${relation.related_collection}: ${error?.message}`,
+              );
             }
           }
         }
@@ -256,6 +274,10 @@ export default defineHook(
             `[DB Configuration] Created ${relationsCreated} relation(s)`,
           );
         }
+      }
+
+      if (relationFailures.length > 0) {
+        throw new Error(relationFailuresMessage(relationFailures));
       }
 
       // STEP 4: Populate the 'language' collection with the default languages
