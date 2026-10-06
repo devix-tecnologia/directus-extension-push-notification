@@ -1,6 +1,6 @@
 # 🧩 Task 018 — m2o columns are created as varchar while the keys they reference are uuid, so no relation is ever registered and listing user_notification fails with 500
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 
