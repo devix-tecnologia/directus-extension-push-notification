@@ -137,6 +137,16 @@ PUBLIC_URL=https://yourdomain.com  # Extension uses this automatically
 
 **For development?** Nothing to do! With `PUBLIC_URL=http://localhost:8055`, the extension auto-converts to `mailto:admin@example.com`.
 
+### Optional: Client diagnostics
+
+The script injected into the Directus app and the service worker write nothing to the browser console. To troubleshoot subscription in the browser, opt in on the server:
+
+```bash
+PUSH_CLIENT_DEBUG=true  # default: off
+```
+
+With it on, the client script logs its steps through `console.debug` (visible with the "Verbose" level in DevTools). Keys and user data are never logged. Turn it off again when done — it affects every user.
+
 ## 🚀 Quick Start
 
 ### Step 1: Install the Extension

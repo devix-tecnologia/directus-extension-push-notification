@@ -31,8 +31,27 @@ async function getDockerComposeCommand(): Promise<string> {
   return dockerComposeCommand;
 }
 
-export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
-  logger.info(`Setting up test environment for suite: ${testSuiteId}`);
+export type TestDatabase = "sqlite" | "pg";
+
+/** Prefixo do compose com o banco escolhido (`tests/db/<banco>.env`) e o perfil `pg` sempre ativo. */
+async function composeCommand(
+  testSuiteId: string,
+  database: TestDatabase,
+): Promise<string> {
+  const composeCmd = await getDockerComposeCommand();
+  const dbEnvFile =
+    database === "pg" ? "tests/db/pg.env" : "tests/db/sqlite.env";
+
+  return `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.15.1"} TEST_DB_ENV_FILE=${dbEnvFile} ${composeCmd} --env-file .env.test --profile pg -f docker-compose.test.yml`;
+}
+
+export async function setupTestEnvironment(
+  testSuiteId: string,
+  { database = "sqlite" }: { database?: TestDatabase } = {},
+): Promise<void> {
+  logger.info(
+    `Setting up test environment for suite: ${testSuiteId} (${database})`,
+  );
 
   try {
     // Build a extensão
@@ -41,10 +60,12 @@ export async function setupTestEnvironment(testSuiteId: string): Promise<void> {
 
     // Iniciar o ambiente Docker
     logger.info("Starting Docker Compose...");
-    const composeCmd = await getDockerComposeCommand();
-    const { stdout, stderr } = await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} DIRECTUS_VERSION=${process.env.DIRECTUS_VERSION || "11.15.1"} ${composeCmd} --env-file .env.test -f docker-compose.test.yml up -d directus`,
-    );
+    const compose = await composeCommand(testSuiteId, database);
+    if (database === "pg") {
+      await execAsync(`${compose} up -d --wait postgres`);
+    }
+
+    const { stdout, stderr } = await execAsync(`${compose} up -d directus`);
 
     if (stderr) logger.warn(`Docker Compose stderr: ${stderr}`);
     logger.info(`Docker Compose stdout: ${stdout}`);
@@ -75,10 +96,8 @@ export async function teardownTestEnvironment(
   logger.info(`Tearing down test environment for suite: ${testSuiteId}`);
 
   try {
-    const composeCmd = await getDockerComposeCommand();
-    await execAsync(
-      `TEST_SUITE_ID=${testSuiteId} ${composeCmd} --env-file .env.test -f docker-compose.test.yml down -v`,
-    );
+    const compose = await composeCommand(testSuiteId, "sqlite");
+    await execAsync(`${compose} down -v`);
     logger.info("✓ Test environment teardown complete");
   } catch (error) {
     logger.error("Failed to teardown test environment:", error);
